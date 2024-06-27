@@ -107,7 +107,7 @@ This means that when we deserialize our byte array we get:
 
 ### Within SQL
 
-The VoltTimeSeriestoString function turns the varbinary format into a human readable one:
+The [VoltTimeSeriestoString](https://github.com/srmadscience/volt-timeseries/blob/main/serverSrc/ie/voltdb/timeseries/VoltTimeSeries.java) function turns the varbinary format into a human readable one:
 
 ````3> select * from compressed_timeseries_table;
 
