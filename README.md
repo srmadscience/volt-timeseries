@@ -88,7 +88,7 @@ Then (in this case) pairs  of bytes with the actual data:
 
 Note that we skip the entries for '12:31:02 00' and '12:31:03 00', as they don't show a change in value.
 
-## decoding
+## Decoding
 
 We reverse the process above, but note that when reloading we may lose pointless data:
 
@@ -102,6 +102,67 @@ This means that when we deserialize our byte array we get:
 |12:31:03 00| 13 |
 |12:31:03 15| 15 |
 |---|---|
+
+## Expanding decoded data 
+
+### Within SQL
+
+The VoltTimeSeriestoString function turns the varbinary format into a human readable one:
+
+````3> select * from compressed_timeseries_table;
+
+MESSAGE_TYPE_ID  MESSAGE_HOUR                EVENT_TS                                                                                   
+---------------- --------------------------- -------------------------------------------------------------------------------------------
+FOO4             2024-06-27 16:00:00.000000  02040109000001905A8C6B7E0000000F9F010FA0000FA0012710000FA00107D0001F40010FA00207D00007D... 
+FOO4             2024-06-27 17:00:00.000000  02040109000001905AA3C280000001018D0207D00107D00007D00207D00007D00207D00007D00207D00007D... 
+
+(Returned 2 rows in 0.41s)
+4> select MESSAGE_TYPE_ID, MESSAGE_HOUR, VoltTimeSeriestoString(event_ts) from compressed_timeseries_table;
+MESSAGE_TYPE_ID  MESSAGE_HOUR                C3                                                                                         
+---------------- --------------------------- -------------------------------------------------------------------------------------------
+FOO4             2024-06-27 16:00:00.000000  TimeSeries [minTime=27 Jun 2024 16:34:30 GMT, maxTime=27 Jun 2024 16:59:58 GMT, minValue=0, maxValue=2, timeData=[TimeSeriesElement [eventTime=27 Jun 2024 16:34:30 GMT, value=0], TimeSeriesElement [eventTime=27 Jun 2024 16:34:34 GMT, value=1], TimeSeriesElement [eventTime=27 Jun 2024 16:34:38 GMT, value=0], TimeSeriesElement [eventTime=27 Jun 2024 16:34:42 GMT, value=1], TimeSeriesElement [eventTime=27 Jun 2024 16:34:52 GMT, value=0], TimeSeriesElement [eventTime=27 Jun 2024 16:34:56 GMT, value=1], TimeSeriesElement [eventTime=27 Jun 2024 16:34:58 GMT, value=0], TimeSeriesElement [eventTime=27 Jun 2024 16:35:06 GMT, value=1], TimeSeriesElement [eventTime=27 Jun 2024 16:35:10 GMT, value=2], TimeSeriesElement [eventTime=27 Jun 2024 16:35:12 GMT, value=0], TimeSeriesElement [eventTime=27 Jun 2024 16:35:14 GMT, value=1], TimeSeriesElement [eventTime=27 Jun 2024 16:35:18 GMT, value=0], TimeSeriesElement [eventTime=27 Jun 2024 16:35:22 GMT, value=1], TimeSeriesElement [eventTime=27 Jun 2024 16:35:24 GMT, value=0], TimeSeriesElement [eventTime=27 Jun 2024 16:35:26 GMT, value=2], TimeSeriesElement [eventTime=27 Jun 2024 16:35:28 GMT, value=0], TimeSeriesElement [eventTime=27 Jun 2024 16:35:30 GMT, value=1], TimeSeriesElement [eventTime=27 Jun 
+.... (truncated for brevity)
+
+
+(Returned 2 rows in 2.68s)
+5> 
+````
+
+
+
+### Within Java
+
+The library function CompressedTimeSeries.expand goes through a VoltTable and expands individual rows containing time series data into a 'normal' format. the the case below a row containing a varbinary field called 'EVENT_TS' is expanded into many rows containing EVENT_TS_DATE and EVENT_TS_VALUE
+
+````
+public class GetEvents extends VoltProcedure {
+
+	// @formatter:off
+
+        
+    public static final SQLStmt getCompressed = new SQLStmt(
+            "SELECT * from compressed_timeseries_table WHERE message_type_id = ? AND message_hour BETWEEN TRUNCATE(HOUR,?) AND TRUNCATE(HOUR,?) order by message_hour;");
+            
+    // @formatter:on
+
+	public VoltTable[] run(String messageTypeId, TimestampType startTime, TimestampType endTime) throws VoltAbortException {
+
+		voltQueueSQL(getCompressed,messageTypeId,  startTime,  endTime);
+		
+		VoltTable[] results = voltExecuteSQL(true);
+		
+		results[0] = CompressedTimeSeries.expand(results[0], "EVENT_TS");
+
+	
+		return results;
+
+	}
+
+}
+
+````
+
+Will take a single row and return something like:
 
 
 
