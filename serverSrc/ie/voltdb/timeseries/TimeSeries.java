@@ -49,6 +49,11 @@ public class TimeSeries {
 
     }
 
+    /**
+     * Customer for non-compressed time series
+     *
+     * @param payload
+     */
     public TimeSeries(byte[] payload) {
 
         byte[] mindateAsByteArray = new byte[Long.BYTES];
@@ -74,6 +79,9 @@ public class TimeSeries {
 
     }
 
+    /**
+     * @return an array of TimeSeriesElement
+     */
     public TimeSeriesElement[] toArray() {
         TimeSeriesElement[] theArray = null;
 
@@ -85,6 +93,13 @@ public class TimeSeries {
         return theArray;
     }
 
+    /**
+     * Add an entry to the TimeSeries. Note that in some cases this is a null-op if
+     * there is no change to the value we don't add an entry.
+     *
+     * @param eventTime
+     * @param value
+     */
     public void put(Date eventTime, long value) {
 
         checkMinValue(value);
@@ -129,35 +144,10 @@ public class TimeSeries {
                     timeData.get(elementId).setValue(value);
                     minAndMaxValueAreUnreliable = true;
 
-//                    // Delete next element if it's value is the same...
-//                    if (timeData.size() -1 <= elementId+1 ) {
-//                        
-//                        if (timeData.get(elementId+1).getValue() == value) {
-//                            timeData.remove(elementId+1);
-//                        }
-//                        
-//                    }
-//                    
-//                    // Delete this element if it's value is the same as previous...
-//                    if (elementId-1  >= 0) {
-//                        
-//                        if (timeData.get(elementId-1).getValue() == value) {
-//                            timeData.remove(elementId);
-//                        }
-//                        
-//                    }
-
                 } else {
 
                     int nextElementId = findFirstElementEqualOrAfter(eventTime);
-
-                    // Update later record to now if the same
-//                    if (timeData.get(nextElementId).getValue() == e.getValue()) {
-//                        timeData.get(nextElementId).setEventTime(e.getEventTime());
-//                        minAndMaxValueAreUnreliable = true;
-//                    } else {
                     timeData.add(nextElementId, e);
-//                    }
 
                 }
 
@@ -166,6 +156,7 @@ public class TimeSeries {
     }
 
     /**
+     * increment max known value if needed.
      * @param value
      */
     private void checkMaxValue(long value) {
@@ -175,6 +166,7 @@ public class TimeSeries {
     }
 
     /**
+     * Increment min known value if needed.
      * @param value
      */
     private void checkMinValue(long value) {
@@ -254,6 +246,10 @@ public class TimeSeries {
         return (timeData.get(thisElement).getValue());
     }
 
+    /**
+     * Convent to byte[] without compression
+     * @return
+     */
     public byte[] toBytes() {
 
         byte offsetBytes = Long.BYTES;
@@ -296,7 +292,7 @@ public class TimeSeries {
                 lastValue = timeData.get(i).getValue();
             }
         }
-        
+
         if (skipCount > 0) {
 
             byte[] untrimmedBuffer = buffer.array();
@@ -304,14 +300,16 @@ public class TimeSeries {
             byte[] trimmedBuffer = new byte[untrimmedBuffer.length - ((offsetBytes + payloadBytes) * skipCount)];
 
             System.arraycopy(untrimmedBuffer, 0, trimmedBuffer, 0, trimmedBuffer.length);
-            
+
             return trimmedBuffer;
         }
 
-        
         return buffer.array();
     }
 
+    /**
+     * @return number of entries.
+     */
     public int size() {
 
         if (timeData == null) {
@@ -321,6 +319,10 @@ public class TimeSeries {
         return timeData.size();
     }
 
+    /**
+     * Certain parts of the 'put' method make minValue and maxValue unreliable.
+     * This method resets them.
+     */
     private void recalcMinAndMax() {
 
         minValue = Long.MAX_VALUE;

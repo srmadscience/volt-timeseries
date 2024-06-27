@@ -45,6 +45,10 @@ public class CompressedTimeSeries extends TimeSeries {
     }
 
 
+    /**
+     * Create a CompressedTimeSeries from a byte[]
+     * @param payload
+     */
     public CompressedTimeSeries(byte[] payload) {
 
         final byte offsetBytes = payload[OFFSET_BYTE];
@@ -112,6 +116,9 @@ public class CompressedTimeSeries extends TimeSeries {
     }
 
  
+    /**
+     * Convert timeseries to byte[]
+     */
     @Override
     public byte[] toBytes() {
 
@@ -217,6 +224,11 @@ public class CompressedTimeSeries extends TimeSeries {
         return buffer.array();
     }
 
+    /**
+     * Examine our data and find the most efficient way to represent the
+     * time part
+     * @return a TimeSeriesGranularity
+     */
     protected TimeSeriesGranularity getDateRepLength() {
 
         TimeSeriesGranularity tsg = new TimeSeriesGranularity();
@@ -269,6 +281,10 @@ public class CompressedTimeSeries extends TimeSeries {
         return tsg;
     }
 
+    /**
+     * Examine our data and find the most efficient way to represent data values
+     * @return
+     */
     protected TimeSeriesGranularity getpayloadRepLength() {
 
         TimeSeriesGranularity tsg = new TimeSeriesGranularity();
@@ -329,11 +345,16 @@ public class CompressedTimeSeries extends TimeSeries {
         return tsg;
     }
 
-    public static byte getTimeGranularity(long aValue) {
+    /**
+     * Find most efficient way to store date aValue 
+     * @param aDateAsLong
+     * @return optimal storage for aValue
+     */
+    public static byte getTimeGranularity(long aDateAsLong) {
 
         for (int i = 0; i < TIME_GRANULARITY.length; i++) {
 
-            if (aValue % TIME_GRANULARITY[i] == 0) {
+            if (aDateAsLong % TIME_GRANULARITY[i] == 0) {
                 return (byte) i;
             }
         }
@@ -342,7 +363,12 @@ public class CompressedTimeSeries extends TimeSeries {
 
     }
 
-    public static byte getDataGranularity(long aValue) {
+    /**
+     * Find most efficient way to store aValue 
+     * @param aValue
+     * @return optimal storage for aValue
+     */
+   public static byte getDataGranularity(long aValue) {
 
         for (int i = 0; i < DATA_GRANULARITY.length; i++) {
 
@@ -355,6 +381,14 @@ public class CompressedTimeSeries extends TimeSeries {
 
     }
 
+    /**
+     * Expand the column 'columnName' into multiple rows, each with
+     * 'columnName'_DATE and 'columnName'_VALUE.
+     * 
+     * @param r
+     * @param columnName
+     * @return a bigger VoltTable
+     */
     @SuppressWarnings("removal")
     public static VoltTable expand(VoltTable r, String columnName) {
 
