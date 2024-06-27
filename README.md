@@ -132,7 +132,7 @@ FOO4             2024-06-27 16:00:00.000000  TimeSeries [minTime=27 Jun 2024 16:
 
 ### Within Java
 
-The library function CompressedTimeSeries.expand goes through a VoltTable and expands individual rows containing time series data into a 'normal' format. the the case below a row containing a varbinary field called 'EVENT_TS' is expanded into many rows containing EVENT_TS_DATE and EVENT_TS_VALUE
+The library function [CompressedTimeSeries.expand](https://github.com/srmadscience/volt-timeseries/blob/main/serverSrc/ie/voltdb/timeseries/CompressedTimeSeries.java) goes through a VoltTable and expands individual rows containing time series data into a 'normal' format. the the case below a row containing a varbinary field called 'EVENT_TS' is expanded into many rows containing EVENT_TS_DATE and EVENT_TS_VALUE
 
 ````
 public class GetEvents extends VoltProcedure {
