@@ -74,7 +74,7 @@ We can then encode the data like this:
 |2| 9 | multiply value field by DATA_GRANULARITY[9] or 1|
 |3| 2 |use a java byte to store value  |
 |4-11| 12:31:01 45|start  date|
-|---|---|---|
+
 
 Then (in this case) pairs  of bytes with the actual data:
 
@@ -84,7 +84,7 @@ Then (in this case) pairs  of bytes with the actual data:
 |60|12|
 |15|13|
 |15|15
-|---|---|
+
 
 Note that we skip the entries for '12:31:02 00' and '12:31:03 00', as they don't show a change in value.
 
