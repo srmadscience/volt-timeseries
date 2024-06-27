@@ -164,6 +164,70 @@ public class GetEvents extends VoltProcedure {
 
 Will take a single row and return something like:
 
+## Benchmark
+
+We use two tables like this:
+
+````
+
+
+CREATE TABLE normal_timeseries_table 
+(message_type_id varchar(30) not null
+,message_time     timestamp  not null
+,event_value      bigint     not null
+,primary key (message_type_id,message_time));
+
+PARTITION TABLE normal_timeseries_table  ON COLUMN message_type_id;
+
+CREATE TABLE compressed_timeseries_table 
+(message_type_id varchar(30) not null
+,message_hour     timestamp  not null
+,event_ts         varbinary(1048576) not null
+,primary key (message_type_id,message_hour));
+
+PARTITION TABLE compressed_timeseries_table  ON COLUMN message_type_id ;
+````
+
+We run code to call a procedure called ReportEvent that inserts the same data into both.
+
+````
+public class ReportEvent extends VoltProcedure {
+
+	// @formatter:off
+
+	public static final SQLStmt addUncompressed = new SQLStmt(
+			"upsert into normal_timeseries_table values (?,?,?);");
+         
+    public static final SQLStmt updateCompressed = new SQLStmt(
+            "update compressed_timeseries_table set event_ts = VoltTimeSeriesput(event_ts,?,?) where message_type_id = ? and message_hour = TRUNCATE(HOUR,?);");
+            
+    public static final SQLStmt addCompressed = new SQLStmt(
+            "insert into compressed_timeseries_table values (?,TRUNCATE(HOUR,?), VoltTimeSeriesputFirst(?,?));");
+
+    // @formatter:on
+
+	public VoltTable[] run(String messageTypeId, TimestampType eventTime, long eventValue) throws VoltAbortException {
+
+		voltQueueSQL(addUncompressed,messageTypeId,  eventTime,  eventValue);
+		voltQueueSQL(updateCompressed, eventTime, eventValue,messageTypeId,eventTime );
+		
+		VoltTable[] results = voltExecuteSQL();
+		
+		results[1].advanceRow();
+		if (results[1].getLong(0) == 0) {
+		    voltQueueSQL(addCompressed, messageTypeId,eventTime, eventTime,eventValue) ;
+		}
+
+		return voltExecuteSQL(true);
+
+	}
+
+}
+
+````
+
+
+
 
 
 
