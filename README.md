@@ -68,7 +68,7 @@ We can then encode the data like this:
 
 
 |Byte | value|Meaning|
-|----------|------|
+|----------|------|---|
 |0| 1| multiply date delta field by TIME_GRANULARITY[1] or 1000|
 |1| 2 | use a java byte to store time delta 
 |2| 9 | multiply value field by DATA_GRANULARITY[9] or 1|
