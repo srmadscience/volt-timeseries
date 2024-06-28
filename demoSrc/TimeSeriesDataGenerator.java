@@ -43,12 +43,6 @@ import org.voltdb.client.NoConnectionsException;
 import org.voltdb.client.ProcCallException;
 import org.voltdb.client.topics.VoltDBKafkaPartitioner;
 
-/**
- * This generates mock CDRS that need to be aggregated. It also deliberately
- * introduces the same kind of mistakes we see in the real world, such as
- * duplicate records, missing records and late records.
- *
- */
 public class TimeSeriesDataGenerator {
 
     Client voltClient = null;
