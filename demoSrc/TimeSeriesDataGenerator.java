@@ -146,6 +146,8 @@ public class TimeSeriesDataGenerator {
             ClientResponse cr = voltClient.callProcedure("GetEvents", nessageType, new Date(startMs),
                     new Date(startMs + recordCount));
             msg(cr.getResults()[0].toFormattedString());
+            
+            
             cr = voltClient.callProcedure("@Statistics", "TABLE", 0);
 
             long compressedSize = 0;

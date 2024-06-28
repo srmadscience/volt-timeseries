@@ -36,8 +36,13 @@ public class GetEvents extends VoltProcedure {
 	// @formatter:off
 
         
+    public static final String TRUNC_INTERVAL = "MINUTE";
+
     public static final SQLStmt getCompressed = new SQLStmt(
-            "SELECT * from compressed_timeseries_table WHERE message_type_id = ? AND message_time BETWEEN TRUNCATE(HOUR,?) AND TRUNCATE(HOUR,?) order by message_time;");
+            "SELECT * from compressed_timeseries_table "
+            + "WHERE message_type_id = ? "
+            + "AND message_time BETWEEN TRUNCATE("+TRUNC_INTERVAL+",?) AND TRUNCATE("+TRUNC_INTERVAL+",?) "
+            + "order by message_time;");
             
     // @formatter:on
 
