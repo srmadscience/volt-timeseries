@@ -60,9 +60,10 @@ public class TimeSeriesDataGenerator {
     long maxValue;
     int changeInterval;
     boolean deleteOld = false;
+    int timeChangeInterval;
 
     public TimeSeriesDataGenerator(String hostnames, String nessageType, int tpMs, int runSeconds, long maxValue,
-            int changeInterval, int deleteOldInt) {
+            int changeInterval, int deleteOldInt, int timeChangeInterval) {
         super();
         this.hostnames = hostnames;
         this.nessageType = nessageType;
@@ -70,6 +71,7 @@ public class TimeSeriesDataGenerator {
         this.runSeconds = runSeconds;
         this.maxValue = maxValue;
         this.changeInterval = changeInterval;
+        this.timeChangeInterval =  timeChangeInterval;
         
         if (deleteOldInt > 0) {
             deleteOld = true;
@@ -180,7 +182,7 @@ public class TimeSeriesDataGenerator {
             }
 
             
-            msg("GREPME"+hostnames+":"+nessageType+":"+tpMs+":"+runSeconds+":"+maxValue+":"+
+            msg("GREPME:"+hostnames+":"+nessageType+":"+tpMs+":"+runSeconds+":"+maxValue+":"+
                 changeInterval+":"+deleteOld+":"+unCompressedSize + ":" + unCompressedRows+ ":" +compressedSize + ":" + compressedRows+":"+recordCount);
         } catch (IOException | ProcCallException e) {
             // TODO Auto-generated catch block
@@ -264,8 +266,8 @@ public class TimeSeriesDataGenerator {
 
         msg("Parameters:" + Arrays.toString(args));
 
-        if (args.length != 7) {
-            msg("Usage: hostnames messagetype tpms durationseconds maxvalue changeinterval deleteOld_zero_or_one");
+        if (args.length != 8) {
+            msg("Usage: hostnames messagetype tpms durationseconds maxvalue changeinterval deleteOld_zero_or_one timechangeinterval");
             System.exit(1);
         }
 
@@ -277,9 +279,10 @@ public class TimeSeriesDataGenerator {
         
         int changeInterval = Integer.parseInt(args[5]);
         int deleteOldInt = Integer.parseInt(args[6]);
+        int timechangeinterval = Integer.parseInt(args[7]);
 
         TimeSeriesDataGenerator g = new TimeSeriesDataGenerator(hostnames, nessageType, tpMs, runSeconds, maxValue,
-                changeInterval,deleteOldInt);
+                changeInterval,deleteOldInt,timechangeinterval);
 
         g.run();
 
