@@ -35,15 +35,17 @@ import org.voltdb.types.TimestampType;
 public class ReportEvent extends VoltProcedure {
 
 	// @formatter:off
+    
+    public static final String TRUNC_INTERVAL = "MINUTE";
 
 	public static final SQLStmt addUncompressed = new SQLStmt(
 			"upsert into normal_timeseries_table values (?,?,?);");
          
     public static final SQLStmt updateCompressed = new SQLStmt(
-            "update compressed_timeseries_table set event_ts = VoltTimeSeriesput(event_ts,?,?) where message_type_id = ? and message_hour = TRUNCATE(HOUR,?);");
+            "update compressed_timeseries_table set event_ts = VoltTimeSeriesput(event_ts,?,?) where message_type_id = ? and message_time = TRUNCATE("+TRUNC_INTERVAL+",?);");
             
     public static final SQLStmt addCompressed = new SQLStmt(
-            "insert into compressed_timeseries_table values (?,TRUNCATE(HOUR,?), VoltTimeSeriesputFirst(?,?));");
+            "insert into compressed_timeseries_table values (?,TRUNCATE("+TRUNC_INTERVAL+",?), VoltTimeSeriesputFirst(?,?));");
 
     // @formatter:on
 

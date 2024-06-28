@@ -177,6 +177,9 @@ public class TimeSeriesDataGenerator {
                 msg("compression ratio = " + (unCompressedSize / compressedSize));
             }
 
+            
+            msg("GREPME"+hostnames+":"+nessageType+":"+tpMs+":"+runSeconds+":"+maxValue+":"+
+                changeInterval+":"+deleteOld+":"+unCompressedSize + ":" + unCompressedRows+ ":" +compressedSize + ":" + compressedRows+":"+recordCount);
         } catch (IOException | ProcCallException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -268,7 +271,8 @@ public class TimeSeriesDataGenerator {
         String nessageType = args[1];
         int tpMs = Integer.parseInt(args[2]);
         int runSeconds = Integer.parseInt(args[3]);
-        long maxValue = Integer.parseInt(args[4]);
+        long maxValue = Long.parseLong(args[4].replace(",", ""));
+        
         int changeInterval = Integer.parseInt(args[5]);
         int deleteOldInt = Integer.parseInt(args[6]);
 
