@@ -133,7 +133,7 @@ public class CompressedTimeSeries extends TimeSeries {
         int spaceNeededForElements = 0;
 
         if (minTime != null) {
-            spaceNeededForElements = 8 + (offsetBytes + payloadBytes) * timeData.size();
+            spaceNeededForElements = Long.BYTES /* minTime */ + (offsetBytes + payloadBytes) * timeData.size();
         }
 
         ByteBuffer buffer = ByteBuffer.allocate(4 + spaceNeededForElements);
