@@ -65,8 +65,8 @@ public class TimeSeriesDataGenerator {
         this.runSeconds = runSeconds;
         this.maxValue = maxValue;
         this.changeInterval = changeInterval;
-        this.timeChangeInterval =  timeChangeInterval;
-        
+        this.timeChangeInterval = timeChangeInterval;
+
         if (deleteOldInt > 0) {
             deleteOld = true;
         }
@@ -89,17 +89,18 @@ public class TimeSeriesDataGenerator {
         long recordCount = 0;
 
         long value = r.nextLong(maxValue);
-        int sameInterval = 0; if (deleteOld) {
-        try {
-            voltClient.callProcedure("@AdHoc", "DELETE FROM NORMAL_TIMESERIES_TABLE;");
-            voltClient.callProcedure("@AdHoc", "DELETE FROM COMPRESSED_TIMESERIES_TABLE;");
-        } catch (IOException | ProcCallException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+        int sameInterval = 0;
+        if (deleteOld) {
+            try {
+                voltClient.callProcedure("@AdHoc", "DELETE FROM NORMAL_TIMESERIES_TABLE;");
+                voltClient.callProcedure("@AdHoc", "DELETE FROM COMPRESSED_TIMESERIES_TABLE;");
+            } catch (IOException | ProcCallException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
 
-        while (System.currentTimeMillis() < (startMs + (1000 * runSeconds))) {
+        while (System.currentTimeMillis() < (startMs + (1000 * runSeconds)) && recordCount < 10000001) {
 
             recordCount++;
 
@@ -142,8 +143,25 @@ public class TimeSeriesDataGenerator {
             ClientResponse cr = voltClient.callProcedure("GetEvents", nessageType, new Date(startMs),
                     new Date(startMs + recordCount));
             msg(cr.getResults()[0].toFormattedString());
-            
-            
+
+            ClientResponse cr2 = voltClient.callProcedure("@AdHoc",
+                    "select message_type_id" + ", message_time,"
+                            + " VoltTimeSeriesgetOffsetBytes(event_ts) time_offset_bytes"
+                            + ", VoltTimeSeriesgetOffsetDecimals(event_ts) time_ms_multiplier"
+                            + ", VoltTimeSeriesgetGranularityBytes(event_ts) data_storage_byhtes"
+                            + ", VoltTimeSeriesgetGranularityDecimals(event_ts) data_multiplier"
+                            + ", VoltTimeSeriesgetPayloadSize(event_ts) size  "
+                            + "from COMPRESSED_TIMESERIES_TABLE order by message_time desc;");
+
+            cr2.getResults()[0].advanceRow();
+
+            long timeOffsetBytes = cr2.getResults()[0].getLong("TIME_OFFSET_BYTES");
+            long timeMsMultiplier = cr2.getResults()[0].getLong("TIME_MS_MULTIPLIER");
+            long dataStorageBytes = cr2.getResults()[0].getLong("DATA_STORAGE_BYHTES");
+            long dataMultiplier = cr2.getResults()[0].getLong("DATA_MULTIPLIER");
+
+            msg(cr2.getResults()[0].toFormattedString());
+
             cr = voltClient.callProcedure("@Statistics", "TABLE", 0);
 
             long compressedSize = 0;
@@ -162,12 +180,12 @@ public class TimeSeriesDataGenerator {
                 } else if (tableName.equalsIgnoreCase("NORMAL_TIMESERIES_TABLE")) {
                     unCompressedSize += cr.getResults()[0].getLong("TUPLE_ALLOCATED_MEMORY");
                     unCompressedSize += cr.getResults()[0].getLong("STRING_DATA_MEMORY");
-                 unCompressedRows += cr.getResults()[0].getLong("TUPLE_COUNT");
+                    unCompressedRows += cr.getResults()[0].getLong("TUPLE_COUNT");
                 }
 
             }
 
-           // msg(cr.getResults()[0].toFormattedString());
+            // msg(cr.getResults()[0].toFormattedString());
             msg("Uncompressed size/rows = " + unCompressedSize + "/" + unCompressedRows);
             msg("compressed   size/rows = " + compressedSize + "/" + compressedRows);
 
@@ -175,9 +193,10 @@ public class TimeSeriesDataGenerator {
                 msg("compression ratio = " + (unCompressedSize / compressedSize));
             }
 
-            
-            msg("GREPME:"+hostnames+":"+nessageType+":"+tpMs+":"+runSeconds+":"+maxValue+":"+
-                changeInterval+":"+deleteOld+":"+unCompressedSize + ":" + unCompressedRows+ ":" +compressedSize + ":" + compressedRows+":"+recordCount);
+            msg("GREPME:" + hostnames + ":" + nessageType + ":" + tpMs + ":" + runSeconds + ":" + maxValue + ":"
+                    + changeInterval + ":" + deleteOld + ":" + unCompressedSize + ":" + unCompressedRows + ":"
+                    + compressedSize + ":" + compressedRows + ":" + recordCount + ":" + timeOffsetBytes + ":"
+                    + timeMsMultiplier + ":" + dataStorageBytes + ":" + dataMultiplier);
         } catch (IOException | ProcCallException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -270,13 +289,13 @@ public class TimeSeriesDataGenerator {
         int tpMs = Integer.parseInt(args[2]);
         int runSeconds = Integer.parseInt(args[3]);
         long maxValue = Long.parseLong(args[4].replace(",", ""));
-        
+
         int changeInterval = Integer.parseInt(args[5]);
         int deleteOldInt = Integer.parseInt(args[6]);
         int timechangeinterval = Integer.parseInt(args[7]);
 
         TimeSeriesDataGenerator g = new TimeSeriesDataGenerator(hostnames, nessageType, tpMs, runSeconds, maxValue,
-                changeInterval,deleteOldInt,timechangeinterval);
+                changeInterval, deleteOldInt, timechangeinterval);
 
         g.run();
 

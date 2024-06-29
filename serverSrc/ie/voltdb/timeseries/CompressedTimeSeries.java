@@ -443,5 +443,26 @@ public class CompressedTimeSeries extends TimeSeries {
 
         return expandedTable;
     }
-
+    
+    public static byte getOffsetBytes(byte[] payload) {
+        return payload[OFFSET_BYTE];
+    }
+    
+    public static int getOffsetDecimals(byte[] payload) {
+        return  TIME_GRANULARITY[payload[OFFSET_DECIMALS]];
+    }
+    
+    public static byte getGranularityBytes(byte[] payload) {
+        return payload[GRANULARITY_BYTE];
+    }
+    
+    public static int getGranularityDecimals(byte[] payload) {
+        return DATA_GRANULARITY[payload[GRANULARITY_DECIMALS]];
+    }
+    
+    public int getPayloadSize(byte[] payload) {
+        return payload.length;
+    }
+    
+ 
 }

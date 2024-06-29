@@ -23,12 +23,8 @@
 
 package ie.voltdb.timeseries;
 
-import java.util.Date;
-
 import org.voltdb.VoltProcedure.VoltAbortException;
 import org.voltdb.types.TimestampType;
-
-import ie.voltdb.timeseries.CompressedTimeSeries;
 
 public class VoltTimeSeries {
 
@@ -207,9 +203,12 @@ public class VoltTimeSeries {
 
             CompressedTimeSeries cts = new CompressedTimeSeries(theTimeSeries);
 
-            cts.put(theDate.asExactJavaDate(), theValue);
-            theBytes = cts.toBytes();
-
+            if (cts.put(theDate.asExactJavaDate(), theValue)) {
+                theBytes = cts.toBytes();
+            } else {
+                // Nothing has changed...
+                return theTimeSeries;
+            }
         } catch (Exception e) {
             throw new VoltAbortException("Unable to deserialize theTimeSeries: " + e.getMessage());
         }
@@ -261,6 +260,51 @@ public class VoltTimeSeries {
         }
 
         return theString;
+    }
+
+    public int getOffsetBytes(byte[] theTimeSeries) {
+
+        if (theTimeSeries == null) {
+            throw new VoltAbortException("theTimeSeries can not be null");
+        }
+
+        return CompressedTimeSeries.getOffsetBytes(theTimeSeries);
+    }
+
+    public int getOffsetDecimals(byte[] theTimeSeries) {
+
+        if (theTimeSeries == null) {
+            throw new VoltAbortException("theTimeSeries can not be null");
+        }
+
+        return CompressedTimeSeries.getOffsetDecimals(theTimeSeries);
+    }
+
+    public int getGranularityBytes(byte[] theTimeSeries) {
+
+        if (theTimeSeries == null) {
+            throw new VoltAbortException("theTimeSeries can not be null");
+        }
+
+        return CompressedTimeSeries.getGranularityBytes(theTimeSeries);
+    }
+
+    public int getGranularityDecimals(byte[] theTimeSeries) {
+
+        if (theTimeSeries == null) {
+            throw new VoltAbortException("theTimeSeries can not be null");
+        }
+
+        return CompressedTimeSeries.getGranularityDecimals(theTimeSeries);
+    }
+
+    public int getPayloadSize(byte[] theTimeSeries) {
+
+        if (theTimeSeries == null) {
+            throw new VoltAbortException("theTimeSeries can not be null");
+        }
+
+        return theTimeSeries.length;
     }
 
 }

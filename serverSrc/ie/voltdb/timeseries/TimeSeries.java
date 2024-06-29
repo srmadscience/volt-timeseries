@@ -99,8 +99,9 @@ public class TimeSeries {
      *
      * @param eventTime
      * @param value
+     * @return true if the array of byte has changed
      */
-    public void put(Date eventTime, long value) {
+    public boolean put(Date eventTime, long value) {
 
         checkMinValue(value);
         checkMaxValue(value);
@@ -113,6 +114,7 @@ public class TimeSeries {
             this.minTime = new Date(eventTime.getTime());
             this.maxTime = new Date(eventTime.getTime());
             timeData.add(e);
+            return true;
 
         } else {
 
@@ -129,6 +131,8 @@ public class TimeSeries {
 
                     minAndMaxValueAreUnreliable = true;
 
+                } else {
+                    return false;
                 }
 
             } else if (eventTime.before(minTime)) {
@@ -152,11 +156,14 @@ public class TimeSeries {
                 }
 
             }
+
+            return true;
         }
     }
 
     /**
      * increment max known value if needed.
+     * 
      * @param value
      */
     private void checkMaxValue(long value) {
@@ -167,6 +174,7 @@ public class TimeSeries {
 
     /**
      * Increment min known value if needed.
+     * 
      * @param value
      */
     private void checkMinValue(long value) {
@@ -248,6 +256,7 @@ public class TimeSeries {
 
     /**
      * Convent to byte[] without compression
+     * 
      * @return
      */
     public byte[] toBytes() {
@@ -320,8 +329,8 @@ public class TimeSeries {
     }
 
     /**
-     * Certain parts of the 'put' method make minValue and maxValue unreliable.
-     * This method resets them.
+     * Certain parts of the 'put' method make minValue and maxValue unreliable. This
+     * method resets them.
      */
     private void recalcMinAndMax() {
 

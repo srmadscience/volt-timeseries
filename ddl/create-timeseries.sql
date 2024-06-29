@@ -11,6 +11,12 @@ DROP FUNCTION VoltTimeSeriesput             IF EXISTS;
 DROP FUNCTION VoltTimeSeriesputFirst IF EXISTS;
 DROP FUNCTION VoltTimeSeriestoString IF EXISTS;
 
+DROP FUNCTION VoltTimeSeriesgetOffsetBytes IF EXISTS;
+DROP FUNCTION VoltTimeSeriesgetOffsetDecimals IF EXISTS;
+DROP FUNCTION VoltTimeSeriesgetGranularityBytes IF EXISTS;
+DROP FUNCTION VoltTimeSeriesgetGranularityDecimals IF EXISTS;
+DROP FUNCTION VoltTimeSeriesgetPayloadSize IF EXISTS;
+
 END_OF_BATCH
 
 
@@ -31,7 +37,11 @@ CREATE FUNCTION VoltTimeSeriesput FROM METHOD ie.voltdb.timeseries.VoltTimeSerie
 CREATE FUNCTION VoltTimeSeriesputFirst FROM METHOD ie.voltdb.timeseries.VoltTimeSeries.putFirst;
 CREATE FUNCTION VoltTimeSeriestoString FROM METHOD ie.voltdb.timeseries.VoltTimeSeries.toString;
 
-
+CREATE FUNCTION VoltTimeSeriesgetOffsetBytes FROM METHOD ie.voltdb.timeseries.VoltTimeSeries.getOffsetBytes;
+CREATE FUNCTION VoltTimeSeriesgetOffsetDecimals FROM METHOD ie.voltdb.timeseries.VoltTimeSeries.getOffsetDecimals;
+CREATE FUNCTION VoltTimeSeriesgetGranularityBytes FROM METHOD ie.voltdb.timeseries.VoltTimeSeries.getGranularityBytes;
+CREATE FUNCTION VoltTimeSeriesgetGranularityDecimals FROM METHOD ie.voltdb.timeseries.VoltTimeSeries.getGranularityDecimals;
+CREATE FUNCTION VoltTimeSeriesgetPayloadSize FROM METHOD ie.voltdb.timeseries.VoltTimeSeries.getPayloadSize;
 
 
 END_OF_BATCH

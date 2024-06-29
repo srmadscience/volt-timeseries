@@ -13,7 +13,7 @@ file -inlinebatch END_OF_BATCH
 
 
 CREATE TABLE normal_timeseries_table 
-(message_type_id varchar(30) not null
+(message_type_id varchar(80) not null
 ,message_time     timestamp  not null
 ,event_value      bigint     not null
 ,primary key (message_type_id,message_time));
@@ -21,7 +21,7 @@ CREATE TABLE normal_timeseries_table
 PARTITION TABLE normal_timeseries_table  ON COLUMN message_type_id;
 
 CREATE TABLE compressed_timeseries_table 
-(message_type_id varchar(30) not null
+(message_type_id varchar(80) not null
 ,message_time     timestamp  not null
 ,event_ts         varbinary(1048576) not null
 ,primary key (message_type_id,message_time));
