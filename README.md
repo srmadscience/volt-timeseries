@@ -83,7 +83,13 @@ Then (in this case) pairs  of bytes with the actual data:
 |15|10|
 |60|12|
 |15|13|
-|15|15
+|15|15|
+|---|---|
+
+Followed by 8 bytes, containing the highest date we've seen:
+
+|\last -8 -> last-11| 12:41:01 45|end  date|
+
 
 
 Note that we skip the entries for '12:31:02 00' and '12:31:03 00', as they don't show a change in value.
