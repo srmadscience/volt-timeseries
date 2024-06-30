@@ -46,7 +46,7 @@ public class CompressedTimeSeries extends TimeSeries {
 
     /**
      * Create a CompressedTimeSeries from a byte[]
-     * 
+     *
      * @param payload
      */
     public CompressedTimeSeries(byte[] payload) {
@@ -214,7 +214,6 @@ public class CompressedTimeSeries extends TimeSeries {
             try {
                 buffer.put(longToBytes(lastTime));
             } catch (Exception e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
@@ -233,6 +232,17 @@ public class CompressedTimeSeries extends TimeSeries {
         return buffer.array();
     }
 
+    /**
+     * Fast 'put' method. In 99% of cases the new value will be later than any seen before 
+     * and will fit the same encoding. In this case instead of de-serializing payload and
+     * creating an ArrayList we add on a couple of bytes to the end of the payload and update
+     * the maxdate at the end.
+     * 
+     * @param payload
+     * @param eventTime
+     * @param value
+     * @return new payload
+     */
     public static byte[] put(byte[] payload, Date eventTime, long value) {
 
         if (payload == null || payload.length <=4 ) {
@@ -247,8 +257,8 @@ public class CompressedTimeSeries extends TimeSeries {
         final long payloadDecimals = DATA_GRANULARITY[payload[GRANULARITY_DECIMALS]];
 
         Date maxTime = getMaxDateFromByteArray(payload,eventTime);
-        
-        
+
+
 
         if (eventTime.after(maxTime)) {
 
@@ -310,7 +320,7 @@ public class CompressedTimeSeries extends TimeSeries {
                                         newPayload.length - TRAILING_DATE_BYTES, TRAILING_DATE_BYTES);
 
                             } catch (Exception e) {
-                                // TODO Auto-generated catch block
+                                
                                 e.printStackTrace();
                             }
 
@@ -383,7 +393,7 @@ public class CompressedTimeSeries extends TimeSeries {
 
     /**
      * Examine our data and find the most efficient way to represent the time part
-     * 
+     *
      * @return a TimeSeriesGranularity
      */
     protected TimeSeriesGranularity getDateRepLength() {
@@ -432,7 +442,7 @@ public class CompressedTimeSeries extends TimeSeries {
 
     /**
      * Examine our data and find the most efficient way to represent data values
-     * 
+     *
      * @return
      */
     protected TimeSeriesGranularity getpayloadRepLength() {
@@ -507,7 +517,7 @@ public class CompressedTimeSeries extends TimeSeries {
 
     /**
      * Find most efficient way to store date aValue
-     * 
+     *
      * @param aDateAsLong
      * @return optimal storage for aValue
      */
@@ -526,7 +536,7 @@ public class CompressedTimeSeries extends TimeSeries {
 
     /**
      * Find most efficient way to store aValue
-     * 
+     *
      * @param aValue
      * @return optimal storage for aValue
      */
@@ -546,7 +556,7 @@ public class CompressedTimeSeries extends TimeSeries {
     /**
      * Expand the column 'columnName' into multiple rows, each with
      * 'columnName'_DATE and 'columnName'_VALUE.
-     * 
+     *
      * @param r
      * @param columnName
      * @return a bigger VoltTable
