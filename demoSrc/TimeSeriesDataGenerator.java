@@ -141,7 +141,7 @@ public class TimeSeriesDataGenerator {
 
         try {
             ClientResponse cr = voltClient.callProcedure("GetEvents", nessageType, new Date(startMs),
-                    new Date(startMs + recordCount));
+                    new Date(startMs + 1000));
             msg(cr.getResults()[0].toFormattedString());
 
             ClientResponse cr2 = voltClient.callProcedure("@AdHoc",
@@ -151,7 +151,7 @@ public class TimeSeriesDataGenerator {
                             + ", VoltTimeSeriesgetGranularityBytes(event_ts) data_storage_byhtes"
                             + ", VoltTimeSeriesgetGranularityDecimals(event_ts) data_multiplier"
                             + ", VoltTimeSeriesgetPayloadSize(event_ts) size  "
-                            + "from COMPRESSED_TIMESERIES_TABLE order by message_time desc;");
+                            + "from COMPRESSED_TIMESERIES_TABLE order by message_time desc limit 10;");
 
             cr2.getResults()[0].advanceRow();
 
