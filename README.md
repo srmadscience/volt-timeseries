@@ -87,8 +87,10 @@ Then (in this case) pairs  of bytes with the actual data:
 |---|---|
 
 Followed by 8 bytes, containing the highest date we've seen:
-|Byte | value|Meaning| |----------|------|---| 
-|\last -8 -> last-11| 12:41:01 45|end  date||----------|------|---| 
+|Byte | value|Meaning| 
+|----------|------|---| 
+|last -8 -> last-11| 12:41:01 45|end  date|
+|----------|------|---| 
 
 
 
