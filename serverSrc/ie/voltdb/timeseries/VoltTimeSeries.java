@@ -183,7 +183,7 @@ public class VoltTimeSeries {
         return theValue;
     }
 
-    public byte[] put(byte[] theTimeSeries, TimestampType theDate, long theValue) throws VoltAbortException {
+    public byte[] putOLD(byte[] theTimeSeries, TimestampType theDate, long theValue) throws VoltAbortException {
 
         byte[] theBytes = null;
 
@@ -209,6 +209,32 @@ public class VoltTimeSeries {
                 // Nothing has changed...
                 return theTimeSeries;
             }
+        } catch (Exception e) {
+            throw new VoltAbortException("Unable to deserialize theTimeSeries: " + e.getMessage());
+        }
+
+        return theBytes;
+    }
+
+    public byte[] put(byte[] theTimeSeries, TimestampType theDate, long theValue) throws VoltAbortException {
+
+        byte[] theBytes = null;
+
+        if (theTimeSeries == null) {
+            throw new VoltAbortException("theTimeSeries can not be null");
+        }
+
+        if (theDate == null) {
+            throw new VoltAbortException("theDate can not be null");
+        }
+
+        if (theValue == Long.MIN_VALUE) {
+            throw new VoltAbortException("theValue can not be null");
+        }
+
+        try {
+
+            theBytes = CompressedTimeSeries.put(theTimeSeries, theDate.asExactJavaDate(), theValue);
         } catch (Exception e) {
             throw new VoltAbortException("Unable to deserialize theTimeSeries: " + e.getMessage());
         }

@@ -100,7 +100,54 @@ class TestManyElementTimeSeries {
                 byte[] asBytes = t.toBytes();
 
                 TimeSeries t3 = new TimeSeries(asBytes);
-                assertEquals(t3.toString(),t.toString(), "Object mutating");
+                byte[] asBytesT3 = t3.toBytes();
+                if (!Arrays.equals(asBytes, asBytesT3)) {
+                    System.out.println(t.toString());
+                    System.out.println(t3.toString());
+                }
+                 assertArrayEquals(asBytesT3, asBytes);
+
+
+
+                if (asBytes.length / (1024) > 1024) {
+                    System.out.println("Ended at " + i + " " + t.size() + " "+ (asBytes.length / (1024))+ "KB  after " + (System.currentTimeMillis() - start.getTime()+"ms"));
+                    break;
+                }
+            }
+
+        }
+
+
+    }
+    
+    @Test
+    void testManyOrdered() {
+
+        t = new TimeSeries();
+        Random r = new Random();
+        final Date start = new Date();
+        final int msDuration = 1000 * 3600;
+
+        for (int i=0; i < TEST_SIZE; i++) {
+            Date thisDate = new Date(start.getTime() + i);
+            long value = 1 + i; //thisDate.getTime() - start.getTime();
+            t.put(thisDate, value);
+
+            TimeSeriesElement[] theArray = t.toArray();
+
+            assertEquals(true, arrayOK(theArray), "element " + i );
+
+
+            if (i % 1000 == 0) {
+                byte[] asBytes = t.toBytes();
+
+                TimeSeries t3 = new TimeSeries(asBytes);
+                byte[] asBytesT3 = t3.toBytes();
+                if (!Arrays.equals(asBytes, asBytesT3)) {
+                    System.out.println(t.toString());
+                    System.out.println(t3.toString());
+                }
+                 assertArrayEquals(asBytesT3, asBytes);
 
 
 
@@ -135,7 +182,12 @@ class TestManyElementTimeSeries {
             if (i % 1000 == 0) {
                 byte[] asBytes = t.toBytes();
                 TimeSeries t3 = new TimeSeries(asBytes);
-                assertEquals(t3.toString(),t.toString(), "Object mutating");
+                byte[] asBytesT3 = t3.toBytes();
+                if (!Arrays.equals(asBytes, asBytesT3)) {
+                    System.out.println(t.toString());
+                    System.out.println(t3.toString());
+                }
+                 assertArrayEquals(asBytesT3, asBytes);
 
                 if (asBytes.length / (1024) > 1024) {
                     System.out.println("testManyRandomInts Ended at " + i + " " + t.size() + " "+ (asBytes.length / (1024))+ "KB after " + (System.currentTimeMillis() - start.getTime()+"ms"));

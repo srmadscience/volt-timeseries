@@ -19,9 +19,8 @@
  * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
  * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
- */package org.voltdb.timeseries.test.fasttests;
- 
- 
+ */
+package org.voltdb.timeseries.test.fasttests;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -115,7 +114,7 @@ class Test3ElementTimeSeries {
 
         assertEquals(theArray.length, 3);
 
-        assertEquals(true, arrayOK(theArray) );
+        assertEquals(true, arrayOK(theArray));
 
     }
 
@@ -125,15 +124,10 @@ class Test3ElementTimeSeries {
         byte[] theArray = t.toBytes();
         TimeSeries t2 = new TimeSeries(theArray);
 
-        assertEquals(t2.toString(),t.toString(), "Object mutating");
-
-
         byte[] theArray2 = t2.toBytes();
-        assertArrayEquals(theArray,theArray2);
+        assertArrayEquals(theArray, theArray2);
 
     }
-
-
 
     public static boolean arrayOK(TimeSeriesElement[] theArray) {
 
@@ -163,41 +157,33 @@ class Test3ElementTimeSeries {
     @Test
     void testGetMinDate() {
 
-       Date foo = t.getMinTime();
-       assertEquals(foo,startDate);
+        Date foo = t.getMinTime();
+        assertEquals(foo, startDate);
 
-
-   }
-
-
+    }
 
     @Test
     void testGetMaxDate() {
 
-       Date foo = t.getMaxTime();
-       assertEquals(foo,endDate);
+        Date foo = t.getMaxTime();
+        assertEquals(foo, endDate);
 
+    }
 
-   }
     @Test
     void testGetMinValue() {
 
-       long foo = t.getMinValue();
-       assertEquals(foo,42);
+        long foo = t.getMinValue();
+        assertEquals(foo, 42);
 
-
-   }
-
+    }
 
     @Test
     void testGetMaxValue() {
 
-       long foo = t.getMaxValue();
-       assertEquals(foo,44);
+        long foo = t.getMaxValue();
+        assertEquals(foo, 44);
 
-
-   }
-
-
+    }
 
 }

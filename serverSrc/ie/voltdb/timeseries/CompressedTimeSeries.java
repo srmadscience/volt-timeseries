@@ -39,14 +39,14 @@ public class CompressedTimeSeries extends TimeSeries {
     };
 
     public static final int[] DATA_GRANULARITY = { 10000, 1000, 100, 50, 10, 5, 4, 3, 2, 1 };
-    
+
     public CompressedTimeSeries() {
         super();
     }
 
-
     /**
      * Create a CompressedTimeSeries from a byte[]
+     * 
      * @param payload
      */
     public CompressedTimeSeries(byte[] payload) {
@@ -62,7 +62,7 @@ public class CompressedTimeSeries extends TimeSeries {
         minTime = new Date(bytesToLong(mindateAsByteArray));
         maxTime = new Date(minTime.getTime());
         final int recordLength = offsetBytes + payloadBytes;
-        final int recordCount = (payload.length - HEADER_BYTES) / recordLength;
+        final int recordCount = (payload.length - HEADER_BYTES - TRAILING_DATE_BYTES) / recordLength;
 
         long lastTime = minTime.getTime();
 
@@ -113,9 +113,10 @@ public class CompressedTimeSeries extends TimeSeries {
 
         }
 
+        maxTime = getMaxDateFromByteArray(payload,maxTime);
+
     }
 
- 
     /**
      * Convert timeseries to byte[]
      */
@@ -133,7 +134,8 @@ public class CompressedTimeSeries extends TimeSeries {
         int spaceNeededForElements = 0;
 
         if (minTime != null) {
-            spaceNeededForElements = Long.BYTES /* minTime */ + (offsetBytes + payloadBytes) * timeData.size();
+            spaceNeededForElements = Long.BYTES /* minTime */ + (offsetBytes + payloadBytes) * timeData.size()
+                    + Long.BYTES /* maxTime */ ;
         }
 
         ByteBuffer buffer = ByteBuffer.allocate(4 + spaceNeededForElements);
@@ -208,6 +210,13 @@ public class CompressedTimeSeries extends TimeSeries {
                 }
 
             }
+            // Store max time
+            try {
+                buffer.put(longToBytes(lastTime));
+            } catch (Exception e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
 
         if (skipCount > 0) {
@@ -217,16 +226,164 @@ public class CompressedTimeSeries extends TimeSeries {
             byte[] trimmedBuffer = new byte[untrimmedBuffer.length - ((offsetBytes + payloadBytes) * skipCount)];
 
             System.arraycopy(untrimmedBuffer, 0, trimmedBuffer, 0, trimmedBuffer.length);
-            
+
             return trimmedBuffer;
         }
 
         return buffer.array();
     }
 
+    public static byte[] put(byte[] payload, Date eventTime, long value) {
+
+        if (payload == null || payload.length <=4 ) {
+            CompressedTimeSeries cts = new CompressedTimeSeries();
+            cts.put(eventTime, value);
+            return cts.toBytes();
+        }
+
+        final byte offsetBytes = payload[OFFSET_BYTE];
+        final long offsetDecimals = TIME_GRANULARITY[payload[OFFSET_DECIMALS]];
+        final byte payloadBytes = payload[GRANULARITY_BYTE];
+        final long payloadDecimals = DATA_GRANULARITY[payload[GRANULARITY_DECIMALS]];
+
+        Date maxTime = getMaxDateFromByteArray(payload,eventTime);
+        
+        
+
+        if (eventTime.after(maxTime)) {
+
+            final long timeDelta = (eventTime.getTime() - maxTime.getTime()) / offsetDecimals;
+            final long valueToStore = value / payloadDecimals;
+
+            TimeSeriesGranularity tsg = new TimeSeriesGranularity();
+            setStorageBytes(tsg, timeDelta, timeDelta);
+
+            // Check  the divisor will work for us. A remainder means it won't..
+            if (value % payloadDecimals == 0) {
+
+                if (tsg.getStorageBytes() <= offsetBytes) {
+
+                    setStorageBytes(tsg, value, value);
+
+                    if (tsg.getStorageBytes() <= payloadBytes) {
+
+                        long lastValue = getLastValue(payload, payloadBytes, payloadDecimals);
+
+                        if (lastValue == value) {
+
+                            // Bump maxTime
+                            int lastDatePos = payload.length - (TRAILING_DATE_BYTES);
+                            System.arraycopy(longToBytes(maxTime.getTime()), 0, payload, lastDatePos,
+                                    TRAILING_DATE_BYTES);
+
+                            return payload;
+
+                        } else {
+
+                            // We can tack new payload onto old byte array instead of having to call the
+                            // Constructor
+                            byte[] newPayload = new byte[payload.length + offsetBytes + payloadBytes];
+
+                            // copy old stuff. minus maxdate
+                            System.arraycopy(payload, 0, newPayload, 0, payload.length - Long.BYTES);
+
+                            byte[] timeBytes = new byte[offsetBytes];
+                            byte[] dataBytes = new byte[payloadBytes];
+
+                            timeBytes = storeValueInByteArray(offsetBytes, timeDelta, timeBytes); // TODO where else?
+
+                            dataBytes = storeValueInByteArray(payloadBytes, valueToStore, dataBytes);
+
+                            // Copy date differential
+                            System.arraycopy(timeBytes, 0, newPayload,
+                                    newPayload.length - (TRAILING_DATE_BYTES + timeBytes.length + dataBytes.length),
+                                    timeBytes.length);
+
+                            // Copy encoded value
+                            System.arraycopy(dataBytes, 0, newPayload,
+                                    newPayload.length - (TRAILING_DATE_BYTES + dataBytes.length), dataBytes.length);
+
+                            // Store max time
+                            try {
+
+                                System.arraycopy(longToBytes(eventTime.getTime()), 0, newPayload,
+                                        newPayload.length - TRAILING_DATE_BYTES, TRAILING_DATE_BYTES);
+
+                            } catch (Exception e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            }
+
+                            return newPayload;
+                        }
+                    }
+                }
+            }
+
+        }
+
+        CompressedTimeSeries cts = new CompressedTimeSeries(payload);
+        cts.put(eventTime, value);
+        return cts.toBytes();
+    }
+
     /**
-     * Examine our data and find the most efficient way to represent the
-     * time part
+     * @param payload
+     * @param payloadBytes
+     * @param payloadDecimals
+     * @return
+     */
+    private static long getLastValue(byte[] payload, final byte payloadBytes, final long payloadDecimals) {
+        // See if last value is same, in which case we just overwrite it...
+        int lastValuePos = payload.length - (TRAILING_DATE_BYTES + payloadBytes);
+        byte[] lastValueBytes = new byte[payloadBytes];
+        System.arraycopy(payload, lastValuePos, lastValueBytes, 0, payloadBytes);
+        long lastValue = 0;
+
+        if (payloadBytes == Long.BYTES) {
+
+            lastValue = bytesToLong(lastValueBytes);
+
+        } else if (payloadBytes == Integer.BYTES) {
+            lastValue = bytesToInteger(lastValueBytes) * payloadDecimals;
+
+        } else if (payloadBytes == Short.BYTES) {
+            lastValue = bytesToShort(lastValueBytes) * payloadDecimals;
+
+        } else if (payloadBytes == Byte.BYTES) {
+            lastValue = lastValueBytes[0] * payloadDecimals;
+
+        }
+        return lastValue;
+    }
+
+    /**
+     * @param offsetBytes
+     * @param timeDelta
+     * @param timeBytes
+     * @return
+     */
+    private static byte[] storeValueInByteArray(final byte offsetBytes, final long timeDelta, byte[] timeBytes) {
+        if (offsetBytes == Long.BYTES) {
+            timeBytes = longToBytes(timeDelta);
+        } else if (offsetBytes == Integer.BYTES) {
+
+            timeBytes = integerToBytes((int) timeDelta);
+
+        } else if (offsetBytes == Short.BYTES) {
+
+            timeBytes = shortToBytes((short) timeDelta);
+
+        } else if (offsetBytes == Byte.BYTES) {
+
+            timeBytes[0] = (byte) timeDelta;
+        }
+        return timeBytes;
+    }
+
+    /**
+     * Examine our data and find the most efficient way to represent the time part
+     * 
      * @return a TimeSeriesGranularity
      */
     protected TimeSeriesGranularity getDateRepLength() {
@@ -268,21 +425,14 @@ public class CompressedTimeSeries extends TimeSeries {
 
         maxTimeDiffMs /= TIME_GRANULARITY[tsg.getDivisorId()];
 
-        if (maxTimeDiffMs <= Byte.MAX_VALUE && maxTimeDiffMs >= Byte.MIN_VALUE) {
-            tsg.setStorageBytes((byte) Byte.BYTES);
-        } else if (maxTimeDiffMs <= Short.MAX_VALUE && maxTimeDiffMs >= Short.MIN_VALUE) {
-            tsg.setStorageBytes((byte) Short.BYTES);
-        } else if (maxTimeDiffMs <= Integer.MAX_VALUE && maxTimeDiffMs >= Integer.MIN_VALUE) {
-            tsg.setStorageBytes((byte) Integer.BYTES);
-        } else {
-            tsg.setStorageBytes((byte) Long.BYTES);
-        }
+        setStorageBytes(tsg, maxTimeDiffMs, maxTimeDiffMs);
 
         return tsg;
     }
 
     /**
      * Examine our data and find the most efficient way to represent data values
+     * 
      * @return
      */
     protected TimeSeriesGranularity getpayloadRepLength() {
@@ -332,6 +482,18 @@ public class CompressedTimeSeries extends TimeSeries {
 
         }
 
+        setStorageBytes(tsg, maxDataValueAfterDivision, minDataValueAfterDivision);
+
+        return tsg;
+    }
+
+    /**
+     * @param tsg
+     * @param maxDataValueAfterDivision
+     * @param minDataValueAfterDivision
+     */
+    private static void setStorageBytes(TimeSeriesGranularity tsg, long maxDataValueAfterDivision,
+            long minDataValueAfterDivision) {
         if (maxDataValueAfterDivision <= Byte.MAX_VALUE && minDataValueAfterDivision >= Byte.MIN_VALUE) {
             tsg.setStorageBytes((byte) Byte.BYTES);
         } else if (maxDataValueAfterDivision <= Short.MAX_VALUE && minDataValueAfterDivision >= Short.MIN_VALUE) {
@@ -341,12 +503,11 @@ public class CompressedTimeSeries extends TimeSeries {
         } else {
             tsg.setStorageBytes((byte) Long.BYTES);
         }
-
-        return tsg;
     }
 
     /**
-     * Find most efficient way to store date aValue 
+     * Find most efficient way to store date aValue
+     * 
      * @param aDateAsLong
      * @return optimal storage for aValue
      */
@@ -364,11 +525,12 @@ public class CompressedTimeSeries extends TimeSeries {
     }
 
     /**
-     * Find most efficient way to store aValue 
+     * Find most efficient way to store aValue
+     * 
      * @param aValue
      * @return optimal storage for aValue
      */
-   public static byte getDataGranularity(long aValue) {
+    public static byte getDataGranularity(long aValue) {
 
         for (int i = 0; i < DATA_GRANULARITY.length; i++) {
 
@@ -443,26 +605,25 @@ public class CompressedTimeSeries extends TimeSeries {
 
         return expandedTable;
     }
-    
+
     public static byte getOffsetBytes(byte[] payload) {
         return payload[OFFSET_BYTE];
     }
-    
+
     public static int getOffsetDecimals(byte[] payload) {
-        return  TIME_GRANULARITY[payload[OFFSET_DECIMALS]];
+        return TIME_GRANULARITY[payload[OFFSET_DECIMALS]];
     }
-    
+
     public static byte getGranularityBytes(byte[] payload) {
         return payload[GRANULARITY_BYTE];
     }
-    
+
     public static int getGranularityDecimals(byte[] payload) {
         return DATA_GRANULARITY[payload[GRANULARITY_DECIMALS]];
     }
-    
+
     public int getPayloadSize(byte[] payload) {
         return payload.length;
     }
-    
- 
+
 }

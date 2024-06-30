@@ -29,6 +29,7 @@ import java.util.Date;
 public class TimeSeries {
 
     public static final int HEADER_BYTES = 12;
+    public static final int TRAILING_DATE_BYTES = 8;
 
     public static final int OFFSET_BYTE = 0;
     public static final int OFFSET_DECIMALS = 1;
@@ -73,9 +74,10 @@ public class TimeSeries {
             System.arraycopy(payload, HEADER_BYTES + (i * recordLength), recordDate, 0, Long.BYTES);
             System.arraycopy(payload, HEADER_BYTES + Long.BYTES + (i * 16), recordValue, 0, Long.BYTES);
 
-            put(new Date(bytesToLong(recordDate)), bytesToLong(recordValue));
-
+             put(new Date(bytesToLong(recordDate)), bytesToLong(recordValue));
         }
+        
+        maxTime = getMaxDateFromByteArray(payload,maxTime);
 
     }
 
@@ -124,11 +126,12 @@ public class TimeSeries {
 
                 long lastValue = timeData.get(timeData.size() - 1).getValue();
 
+                maxTime = eventTime;
+
                 if (lastValue != e.getValue()) {
 
                     timeData.add(e);
-                    maxTime = eventTime;
-
+  
                     minAndMaxValueAreUnreliable = true;
 
                 } else {
@@ -402,6 +405,25 @@ public class TimeSeries {
         }
         return result;
     }
+
+    
+    /**
+     * @param payload
+     * @param defaultDate 
+     * @return
+     */
+    protected static Date getMaxDateFromByteArray(byte[] payload, Date defaultDate) {
+        
+        if (payload == null || payload.length < 12  ) {
+            return defaultDate;
+        }
+           
+        byte[] maxdateAsByteArray = new byte[Long.BYTES];
+        System.arraycopy(payload, payload.length - maxdateAsByteArray.length, maxdateAsByteArray, 0, Long.BYTES);
+        Date maxTime = new Date(bytesToLong(maxdateAsByteArray));
+        return maxTime;
+    }
+
 
     @SuppressWarnings("deprecation")
     @Override

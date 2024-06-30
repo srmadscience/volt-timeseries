@@ -88,7 +88,7 @@ class TestNonNullTimeSeries {
     void testToBytes() {
 
 
-        byte[] expectedData = {1, 0, 1, 7, 0, 0, 1, -112, -44, 80, -65, 32, 0, 14};
+        byte[] expectedData = {1, 0, 1, 7, 0, 0, 1, -112, -44, 80, -65, 32, 0, 14,0, 0, 1, -112, -44, 80, -65, 32};
 
         byte[] ourBytes = t.toBytes();
 
