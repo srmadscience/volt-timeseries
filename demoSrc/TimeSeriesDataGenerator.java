@@ -196,7 +196,7 @@ public class TimeSeriesDataGenerator {
             msg("GREPME:" + hostnames + ":" + nessageType + ":" + tpMs + ":" + runSeconds + ":" + maxValue + ":"
                     + changeInterval + ":" + deleteOld + ":" + unCompressedSize + ":" + unCompressedRows + ":"
                     + compressedSize + ":" + compressedRows + ":" + recordCount + ":" + timeOffsetBytes + ":"
-                    + timeMsMultiplier + ":" + dataStorageBytes + ":" + dataMultiplier);
+                    + timeMsMultiplier + ":" + dataStorageBytes + ":" + dataMultiplier +":" + ((System.currentTimeMillis() - startMs)/1000));
         } catch (IOException | ProcCallException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
