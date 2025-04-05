@@ -19,11 +19,11 @@
  * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
  * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
- */package org.voltdb.timeseries.test.fasttests;
- 
- 
+ */
+package org.voltdb.timeseries.test.fasttests;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Date;
@@ -34,6 +34,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import ie.voltdb.timeseries.BigDecimalHasWrongScaleException;
 import ie.voltdb.timeseries.CompressedTimeSeries;
 import ie.voltdb.timeseries.TimeSeriesElement;
 
@@ -77,34 +78,40 @@ class Test3ElementCompressedTimeSeries {
 
     @Test
     void testGet() {
-
-        long l = t.getValue(zeroDate);
-        assertEquals(l, TEST_VALUE1, "testGet shoudl return reference item");
-
+        try {
+            long l = t.findValueForExactMatch(startDate);
+            assertEquals(l, TEST_VALUE1, "testGet shoudl return reference item");
+        } catch (BigDecimalHasWrongScaleException e) {
+            fail();
+        }
     }
 
     @Test
     void testFind() {
 
-        long l = t.findExactMatch(new Date(0));
-        assertEquals(l, -1, "all searches should return -1 for null t");
+        long l = t.findExactMatchLocation(new Date(0));
+        assertEquals(l, Integer.MIN_VALUE, "all searches should return -1 for null t");
 
     }
 
     @Test
     void testFindWithData() {
 
-        long l = t.findExactMatch(startDate);
-        assertEquals(l, 0);
-        assertEquals(t.getValue(startDate), TEST_VALUE1);
+        try {
+            long l = t.findExactMatchLocation(startDate);
+            assertEquals(l, 0);
+            assertEquals(t.findValueForExactMatch(startDate), TEST_VALUE1);
 
-        l = t.findExactMatch(middleDate);
-        assertEquals(l, 1);
-        assertEquals(t.getValue(middleDate), TEST_VALUE2);
+            l = t.findExactMatchLocation(middleDate);
+            assertEquals(l, 1);
+            assertEquals(t.findValueForExactMatch(middleDate), TEST_VALUE2);
 
-        l = t.findExactMatch(endDate);
-        assertEquals(l, 2);
-        assertEquals(t.getValue(endDate), TEST_VALUE3);
+            l = t.findExactMatchLocation(endDate);
+            assertEquals(l, 2);
+            assertEquals(t.findValueForExactMatch(endDate), TEST_VALUE3);
+        } catch (BigDecimalHasWrongScaleException e) {
+            fail();
+        }
 
     }
 
@@ -120,7 +127,7 @@ class Test3ElementCompressedTimeSeries {
         Date[] testDates = { startDate, middleDate, endDate };
 
         for (int i = 0; i < testDates.length; i++) {
-            long l = t.findExactMatch(testDates[i]);
+            long l = t.findExactMatchLocation(testDates[i]);
             assertEquals(l, i, "Expected Value Not Returned " + l + " " + i);
 
         }
@@ -136,54 +143,44 @@ class Test3ElementCompressedTimeSeries {
         System.out.println(t.toString());
         System.out.println(t2.toString());
 
-
-        //assertEquals(t2.toString(),t.toString(), "Object mutating");
-
+        // assertEquals(t2.toString(),t.toString(), "Object mutating");
 
         byte[] theArray2 = t2.toBytes();
-        assertArrayEquals(theArray,theArray2);
+        assertArrayEquals(theArray, theArray2);
 
     }
 
     @Test
     void testGetMinDate() {
 
-       Date foo = t.getMinTime();
-       assertEquals(foo,startDate);
+        Date foo = t.getMinTime();
+        assertEquals(foo, startDate);
 
-
-   }
-
-
+    }
 
     @Test
     void testGetMaxDate() {
 
-       Date foo = t.getMaxTime();
-       assertEquals(foo,endDate);
+        Date foo = t.getMaxTime();
+        assertEquals(foo, endDate);
 
+    }
 
-   }
     @Test
     void testGetMinValue() {
 
-       long foo = t.getMinValue();
-       assertEquals(foo,1);
+        long foo = t.getMinValue();
+        assertEquals(foo, 1);
 
-
-   }
-
+    }
 
     @Test
     void testGetMaxValue() {
 
-       long foo = t.getMaxValue();
-       assertEquals(foo,3);
+        long foo = t.getMaxValue();
+        assertEquals(foo, 3);
 
-
-   }
-
-
+    }
 
     public static boolean arrayOK(TimeSeriesElement[] theArray) {
 

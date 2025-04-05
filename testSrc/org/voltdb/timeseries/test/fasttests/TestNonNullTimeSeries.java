@@ -22,6 +22,7 @@
  */
 package org.voltdb.timeseries.test.fasttests;
 
+import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Date;
@@ -33,6 +34,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import ie.voltdb.timeseries.BigDecimalHasWrongScaleException;
 import ie.voltdb.timeseries.CompressedTimeSeries;
 import ie.voltdb.timeseries.TimeSeries;
 import ie.voltdb.timeseries.TimeSeriesElement;
@@ -48,7 +50,6 @@ class TestNonNullTimeSeries {
 
     @BeforeAll
     static void setUpBeforeClass() throws Exception {
-
 
     }
 
@@ -69,40 +70,41 @@ class TestNonNullTimeSeries {
     @Test
     void testGet() {
 
-        long l = t.getValue(zeroDate);
-        assertEquals(l,TEST_VALUE,"testGet shoudl return reference item");
-
+        try {
+            long l = t.findValueForFirstLocationEqualOrAfter(zeroDate);
+            assertEquals(l, TEST_VALUE, "testGet shoudl return reference item");
+        } catch (BigDecimalHasWrongScaleException e) {
+            fail();
+        }
 
     }
 
     @Test
     void testFind() {
 
-        long l =  t.findExactMatch(new Date(0));
-        assertEquals(l,-1,"all searches should return -1 for null t");
-
+        long l = t.findExactMatchLocation(new Date(0));
+        assertEquals(l, Integer.MIN_VALUE, "all searches should return -1 for null t");
 
     }
 
     @Test
     void testToBytes() {
 
-
-        byte[] expectedData = {1, 0, 1, 7, 0, 0, 1, -112, -44, 80, -65, 32, 0, 14,0, 0, 1, -112, -44, 80, -65, 32};
+        byte[] expectedData = { 1, 3, 1, 12, 0, 0, 0
+                , 1, -112, -44, 80, -65, 32, 0, 14, 0, 0, 1, -112, -44, 80, -65, 32 };
 
         byte[] ourBytes = t.toBytes();
 
-        Assertions.assertArrayEquals(expectedData,ourBytes,"toBytes should return metadata for null t");
+        Assertions.assertArrayEquals(expectedData, ourBytes, "toBytes should return metadata for null t");
     }
 
     @Test
-     void testToString() {
+    void testToString() {
 
-        String expected = "TimeSeries [minTime=21 Jul 2024 08:03:00 GMT, maxTime=21 Jul 2024 08:03:00 GMT, minValue=42, maxValue=42, timeData=[TimeSeriesElement [eventTime=21 Jul 2024 08:03:00 GMT, value=42]]]";
+        String expected = "TimeSeries [minTime=21 Jul 2024 08:03:00 GMT, maxTime=21 Jul 2024 08:03:00 GMT, minValue=42, maxValue=42, decimalPlaces=0, timeData=[TimeSeriesElement [eventTime=21 Jul 2024 08:03:00 GMT, value=42]]]";
 
         String foo = t.toString();
-        assertEquals(foo,expected,"toBytes should return known string for null t");
-
+        assertEquals(foo, expected, "toBytes should return known string for null t");
 
     }
 
@@ -111,65 +113,53 @@ class TestNonNullTimeSeries {
 
         TimeSeriesElement[] theArray = t.toArray();
 
-        assertEquals(theArray.length,1);
+        assertEquals(theArray.length, 1);
 
-   }
+    }
 
     @Test
     void testConstructor() {
 
-
-        byte[] inputData = {8, 4, 8, 9, 0, 0, 56, 24, -20, 48, -97, 32, 0, 0, 56, 24, -20, 48, -97, 32, 0, 0, 0, 0, 0, 0, 0, 42};
-
+        byte[] inputData = { 8, 7, 8, 14, 0, 0, 0, 56, 24, -20, 48
+                , -97, 32, 0, 0, 56, 24, -20, 48, -97, 32, 0, 0, 0, 0, 0, 0, 0, 42};
 
         TimeSeries t2 = new TimeSeries(inputData);
 
         byte[] ourBytes = t2.toBytes();
 
-        Assertions.assertArrayEquals(inputData,ourBytes);
+        Assertions.assertArrayEquals(inputData, ourBytes);
     }
-
 
     @Test
     void testGetMinDate() {
 
-       Date foo = t.getMinTime();
-       assertEquals(foo,startDate);
+        Date foo = t.getMinTime();
+        assertEquals(foo, startDate);
 
-
-   }
-
-
+    }
 
     @Test
     void testGetMaxDate() {
 
-       Date foo = t.getMaxTime();
-       assertEquals(foo,startDate);
+        Date foo = t.getMaxTime();
+        assertEquals(foo, startDate);
 
+    }
 
-   }
     @Test
     void testGetMinValue() {
 
-       long foo = t.getMinValue();
-       assertEquals(foo,42);
+        long foo = t.getMinValue();
+        assertEquals(foo, 42);
 
-
-   }
-
+    }
 
     @Test
     void testGetMaxValue() {
 
-       long foo = t.getMaxValue();
-       assertEquals(foo,42);
+        long foo = t.getMaxValue();
+        assertEquals(foo, 42);
 
-
-   }
-
-
-
-
+    }
 
 }

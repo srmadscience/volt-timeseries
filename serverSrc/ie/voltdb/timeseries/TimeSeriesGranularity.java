@@ -1,24 +1,9 @@
-/* This file is part of Volt Active Data.
- * Copyright (C) 2008-2024 Volt Active Data Inc.
+/*
+ * Copyright (C) 2025 Volt Active Data Inc.
  *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
- * IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
- * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
- * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
+ * Use of this source code is governed by an MIT
+ * license that can be found in the LICENSE file or at
+ * https://opensource.org/licenses/MIT.
  */
 package ie.voltdb.timeseries;
 
@@ -54,6 +39,25 @@ public class TimeSeriesGranularity {
     public void setDivisorId(byte newDivisorId) {
         this.divisorId = newDivisorId;
     }
+
+    /**
+     * @param maxDataValueAfterDivision
+     * @param minDataValueAfterDivision
+     */
+    public  void setStorageBytes(long maxDataValueAfterDivision,
+            long minDataValueAfterDivision) {
+        if (maxDataValueAfterDivision <= Byte.MAX_VALUE && minDataValueAfterDivision >= Byte.MIN_VALUE) {
+            setStorageBytes((byte) Byte.BYTES);
+        } else if (maxDataValueAfterDivision <= Short.MAX_VALUE && minDataValueAfterDivision >= Short.MIN_VALUE) {
+            setStorageBytes((byte) Short.BYTES);
+        } else if (maxDataValueAfterDivision <= Integer.MAX_VALUE && minDataValueAfterDivision >= Integer.MIN_VALUE) {
+            setStorageBytes((byte) Integer.BYTES);
+        } else {
+            setStorageBytes((byte) Long.BYTES);
+        }
+    }
+
+
 
     @Override
     public String toString() {

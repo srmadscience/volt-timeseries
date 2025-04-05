@@ -22,7 +22,6 @@
  */
 
 package org.voltdb.timeseries.test.fasttests;
- 
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

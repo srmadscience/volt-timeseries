@@ -23,7 +23,6 @@
 package org.voltdb.timeseries.test.slowtests;
 
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Arrays;
 import java.util.Date;
@@ -36,7 +35,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import ie.voltdb.timeseries.CompressedTimeSeries;
-import ie.voltdb.timeseries.TimeSeries;
 import ie.voltdb.timeseries.TimeSeriesElement;
 
 class TestManyElementCompressedTimeSeriesFastPut {
@@ -63,9 +61,9 @@ class TestManyElementCompressedTimeSeriesFastPut {
     void tearDown() throws Exception {
     }
 
-    
-  
-    
+
+
+
     @Test
     void testManyFastPut() {
 
@@ -73,21 +71,21 @@ class TestManyElementCompressedTimeSeriesFastPut {
         Random r = new Random(42);
         final Date start = new Date();
         final int msDuration = 1000 * 3600;
-        
+
         byte[] tAsBytes = t.toBytes();
 
         for (int i = 0; i < TEST_SIZE; i++) {
             Date thisDate = new Date(start.getTime() + i);
             long value = thisDate.getTime() - start.getTime();
-            
-            
+
+
             tAsBytes = CompressedTimeSeries.put(tAsBytes, thisDate, value);
-            
-  
+
+
             if (i % 1 == 100) {
                 System.out.println("testManyRandomLons " + i);
             }
-            
+
             if (r.nextInt(100) == 0) {
                 //byte[] asBytes = t.toBytes();
                 CompressedTimeSeries t3 = new CompressedTimeSeries(tAsBytes);
@@ -113,7 +111,7 @@ class TestManyElementCompressedTimeSeriesFastPut {
 
     }
 
-   
+
     public static boolean arrayOK(TimeSeriesElement[] theArray) {
 
         Date lastDate = new Date(0);

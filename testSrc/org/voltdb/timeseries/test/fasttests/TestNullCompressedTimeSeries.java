@@ -22,6 +22,7 @@
  */
 package org.voltdb.timeseries.test.fasttests;
 
+import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -34,6 +35,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import ie.voltdb.timeseries.BigDecimalHasWrongScaleException;
 import ie.voltdb.timeseries.CompressedTimeSeries;
 import ie.voltdb.timeseries.TimeSeriesElement;
 
@@ -59,19 +61,20 @@ class TestNullCompressedTimeSeries {
 
     @Test
     void testGet() {
-
-        long l = t.getValue(new Date(0));
-        assertEquals(l,-1,"all searches should return -1 for null t");
-
+        try {
+            long l = t.findValueForExactMatch(new Date(0));
+            assertEquals(l, Integer.MIN_VALUE, "all searches should return -1 for null t");
+        } catch (BigDecimalHasWrongScaleException e) {
+            fail();
+        }
 
     }
 
     @Test
     void testFind() {
 
-        long l =  t.findExactMatch(new Date(0));
-        assertEquals(l,-1,"all searches should return -1 for null t");
-
+        long l = t.findExactMatchLocation(new Date(0));
+        assertEquals(l, Integer.MIN_VALUE, "all searches should return -1 for null t");
 
     }
 
@@ -79,25 +82,24 @@ class TestNullCompressedTimeSeries {
     void testToBytes() {
 
         byte offsetBytes = Long.BYTES;
-        byte offsetDecimals = (byte) (CompressedTimeSeries.TIME_GRANULARITY.length -1);
+        byte offsetDecimals = (byte) (CompressedTimeSeries.TIME_GRANULARITY.length - 1);
         byte payloadBytes = Long.BYTES;
-        byte payloadDecimals = (byte) (CompressedTimeSeries.DATA_GRANULARITY.length -1);
+        byte payloadDecimals = (byte) (CompressedTimeSeries.DATA_GRANULARITY.length - 1);
 
-        byte[] metadata = { offsetBytes, offsetDecimals, payloadBytes, payloadDecimals };
+        byte[] metadata = { offsetBytes, offsetDecimals, payloadBytes, payloadDecimals, 0 };
 
         byte[] ourBytes = t.toBytes();
 
-        Assertions.assertArrayEquals(metadata,ourBytes,"toBytes should return metadata for null t");
+        Assertions.assertArrayEquals(metadata, ourBytes, "toBytes should return metadata for null t");
     }
 
     @Test
-     void testToString() {
+    void testToString() {
 
-        String expected = "TimeSeries [minTime=, maxTime=, minValue=9223372036854775807, maxValue=-9223372036854775808, timeData=null]";
+        String expected = "TimeSeries [minTime=, maxTime=, minValue=9223372036854775807, maxValue=-9223372036854775808, decimalPlaces=0, timeData=null]";
 
         String foo = t.toString();
-        assertEquals(foo,expected,"toBytes should return known string for null t");
-
+        assertEquals(foo, expected, "toBytes should return known string for null t");
 
     }
 
@@ -108,46 +110,38 @@ class TestNullCompressedTimeSeries {
 
         assertNull(theArray);
 
-   }
+    }
+
     @Test
     void testGetMinDate() {
 
-       Date foo = t.getMinTime();
-       assertEquals(foo,null);
+        Date foo = t.getMinTime();
+        assertEquals(foo, null);
 
-
-   }
-
-
+    }
 
     @Test
     void testGetMaxDate() {
 
-       Date foo = t.getMaxTime();
-       assertEquals(foo,null);
+        Date foo = t.getMaxTime();
+        assertEquals(foo, null);
 
+    }
 
-   }
     @Test
     void testGetMinValue() {
 
-       long foo = t.getMinValue();
-       assertEquals(foo,Long.MAX_VALUE);
+        long foo = t.getMinValue();
+        assertEquals(foo, Long.MAX_VALUE);
 
-
-   }
-
+    }
 
     @Test
     void testGetMaxValue() {
 
-       long foo = t.getMaxValue();
-       assertEquals(foo,Long.MIN_VALUE);
+        long foo = t.getMaxValue();
+        assertEquals(foo, Long.MIN_VALUE);
 
-
-   }
-
-
-
+    }
 
 }

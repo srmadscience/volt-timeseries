@@ -23,6 +23,7 @@
 package org.voltdb.timeseries.test.fasttests;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Date;
@@ -33,6 +34,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import ie.voltdb.timeseries.BigDecimalHasWrongScaleException;
 import ie.voltdb.timeseries.TimeSeries;
 import ie.voltdb.timeseries.TimeSeriesElement;
 
@@ -76,35 +78,39 @@ class Test3ElementTimeSeries {
 
     @Test
     void testGet() {
-
-        long l = t.getValue(zeroDate);
-        assertEquals(l, TEST_VALUE1, "testGet shoudl return reference item");
-
+        try {
+            long l = t.findValueForExactMatch(startDate);
+            assertEquals(l, TEST_VALUE1, "testGet shoudl return reference item");
+        } catch (BigDecimalHasWrongScaleException e) {
+            fail();
+        }
     }
 
     @Test
     void testFind() {
 
-        long l = t.findExactMatch(new Date(0));
-        assertEquals(l, -1, "all searches should return -1 for null t");
+        long l = t.findExactMatchLocation(new Date(0));
+        assertEquals(l, Integer.MIN_VALUE, "all searches should return -1 for null t");
 
     }
 
     @Test
     void testFindWithData() {
+        try {
+            long l = t.findExactMatchLocation(startDate);
+            assertEquals(l, 0);
+            assertEquals(t.findValueForExactMatch(startDate), TEST_VALUE1);
 
-        long l = t.findExactMatch(startDate);
-        assertEquals(l, 0);
-        assertEquals(t.getValue(startDate), TEST_VALUE1);
+            l = t.findExactMatchLocation(middleDate);
+            assertEquals(l, 1);
+            assertEquals(t.findValueForExactMatch(middleDate), TEST_VALUE2);
 
-        l = t.findExactMatch(middleDate);
-        assertEquals(l, 1);
-        assertEquals(t.getValue(middleDate), TEST_VALUE2);
-
-        l = t.findExactMatch(endDate);
-        assertEquals(l, 2);
-        assertEquals(t.getValue(endDate), TEST_VALUE3);
-
+            l = t.findExactMatchLocation(endDate);
+            assertEquals(l, 2);
+            assertEquals(t.findValueForExactMatch(endDate), TEST_VALUE3);
+        } catch (BigDecimalHasWrongScaleException e) {
+            fail();
+        }
     }
 
     @Test

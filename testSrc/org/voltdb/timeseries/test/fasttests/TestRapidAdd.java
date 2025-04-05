@@ -24,7 +24,6 @@
 package org.voltdb.timeseries.test.fasttests;
 
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Date;
 
@@ -33,8 +32,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.voltdb.VoltTable;
-import org.voltdb.VoltType;
 
 import ie.voltdb.timeseries.CompressedTimeSeries;
 import ie.voltdb.timeseries.TimeSeries;
@@ -101,17 +98,17 @@ class TestRapidAdd {
         byte[] newArray = t.toBytes();
 
         byte[] newerArray = CompressedTimeSeries.put(anArray, afterEndDate, TEST_VALUE3);
-        
+
         byte[] newArrayFirstBit = new byte[newArray.length - TimeSeries.TRAILING_DATE_BYTES];
         byte[] newerArrayFirstBit = new byte[newerArray.length - TimeSeries.TRAILING_DATE_BYTES];
-        
+
         System.arraycopy(newArray,0 , newArrayFirstBit, 0, newArray.length - TimeSeries.TRAILING_DATE_BYTES);
         System.arraycopy(newerArray,0 , newerArrayFirstBit, 0, newerArray.length - TimeSeries.TRAILING_DATE_BYTES);
-        
+
         assertArrayEquals(newArrayFirstBit, newerArrayFirstBit);
 
     }
-    
+
     @Test
     void testLaterDateDiffrentValue() {
 
@@ -125,33 +122,33 @@ class TestRapidAdd {
         assertArrayEquals(newerArray, newArray);
 
     }
-    
+
     @Test
     void testFirstEntryUsing3ElementArray() {
 
         byte[] referenceArray = t.toBytes();
-        
+
         byte[] nullArray = null;
         byte[] startedAsNullArray = CompressedTimeSeries.put(nullArray,startDate, TEST_VALUE1);
         startedAsNullArray = CompressedTimeSeries.put(startedAsNullArray,middleDate, TEST_VALUE2);
         startedAsNullArray = CompressedTimeSeries.put(startedAsNullArray,endDate, TEST_VALUE3);
-        
+
         assertArrayEquals(referenceArray, startedAsNullArray);
 
     }
-    
+
     @Test
     void testFirstEntryUsing1ElementArray() {
 
-        
+
         CompressedTimeSeries t2 = new CompressedTimeSeries();
         t2.put(startDate, TEST_VALUE1);
-        
+
         byte[] referenceArray = t2.toBytes();
-        
+
         byte[] nullArray = null;
         byte[] startedAsNullArray = CompressedTimeSeries.put(nullArray,startDate, TEST_VALUE1);
-        
+
         assertArrayEquals(referenceArray, startedAsNullArray);
 
     }

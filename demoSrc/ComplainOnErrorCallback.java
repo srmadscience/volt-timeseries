@@ -1,7 +1,5 @@
 
 
-import java.util.concurrent.BlockingQueue;
-
 /* This file is part of VoltDB.
  * Copyright (C) 2008-2023 VoltDB Inc.
  *
@@ -35,7 +33,7 @@ import org.voltdb.client.ProcedureCallback;
  */
 public class ComplainOnErrorCallback implements ProcedureCallback {
 
-  
+
     @Override
     public void clientCallback(ClientResponse arg0) throws Exception {
 

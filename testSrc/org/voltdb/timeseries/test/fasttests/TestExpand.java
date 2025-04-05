@@ -22,7 +22,7 @@
  */
 
 package org.voltdb.timeseries.test.fasttests;
- 
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Date;
@@ -78,13 +78,14 @@ class TestExpand {
     @Test
     void testExpandOneRow() {
 
-        VoltTable table = new VoltTable(
-                new VoltTable.ColumnInfo("id", VoltType.BIGINT),new VoltTable.ColumnInfo("batch_date", VoltType.TIMESTAMP),
-                new VoltTable.ColumnInfo("ts", VoltType.VARBINARY),new VoltTable.ColumnInfo("ANUMBER", VoltType.BIGINT));
+        VoltTable table = new VoltTable(new VoltTable.ColumnInfo("id", VoltType.BIGINT),
+                new VoltTable.ColumnInfo("batch_date", VoltType.TIMESTAMP),
+                new VoltTable.ColumnInfo("ts", VoltType.VARBINARY),
+                new VoltTable.ColumnInfo("ANUMBER", VoltType.BIGINT));
 
         table.addRow(1, startDate, t.toBytes(), 42);
-        //table.addRow(2, middleDate, t.toBytes(), 43);
-        //table.addRow(3, endDate, t.toBytes(), 44);
+        // table.addRow(2, middleDate, t.toBytes(), 43);
+        // table.addRow(3, endDate, t.toBytes(), 44);
 
         System.out.println(table.toFormattedString());
 
@@ -92,17 +93,17 @@ class TestExpand {
 
         System.out.println(table2.toFormattedString());
 
-        assertEquals(table2.getRowCount(),3);
-
+        assertEquals(table2.getRowCount(), 3);
 
     }
 
     @Test
     void testExpandThreeRows() {
 
-        VoltTable table = new VoltTable(
-                new VoltTable.ColumnInfo("id", VoltType.BIGINT),new VoltTable.ColumnInfo("batch_date", VoltType.TIMESTAMP),
-                new VoltTable.ColumnInfo("ts", VoltType.VARBINARY),new VoltTable.ColumnInfo("ANUMBER", VoltType.BIGINT));
+        VoltTable table = new VoltTable(new VoltTable.ColumnInfo("id", VoltType.BIGINT),
+                new VoltTable.ColumnInfo("batch_date", VoltType.TIMESTAMP),
+                new VoltTable.ColumnInfo("ts", VoltType.VARBINARY),
+                new VoltTable.ColumnInfo("ANUMBER", VoltType.BIGINT));
 
         table.addRow(1, startDate, t.toBytes(), 42);
         table.addRow(2, middleDate, t.toBytes(), 143);
@@ -114,8 +115,7 @@ class TestExpand {
 
         System.out.println(table2.toFormattedString());
 
-        assertEquals(table2.getRowCount(),9);
-
+        assertEquals(table2.getRowCount(), 9);
 
     }
 
@@ -126,13 +126,14 @@ class TestExpand {
 
         final long startMs = System.currentTimeMillis();
 
-        for (int i =0; i < 100; i++) {
+        for (int i = 0; i < 100; i++) {
             t2.put(new Date(startMs + i), i % 10);
         }
 
-        VoltTable table = new VoltTable(
-                new VoltTable.ColumnInfo("id", VoltType.BIGINT),new VoltTable.ColumnInfo("batch_date", VoltType.TIMESTAMP),
-                new VoltTable.ColumnInfo("ts", VoltType.VARBINARY),new VoltTable.ColumnInfo("ANUMBER", VoltType.BIGINT));
+        VoltTable table = new VoltTable(new VoltTable.ColumnInfo("id", VoltType.BIGINT),
+                new VoltTable.ColumnInfo("batch_date", VoltType.TIMESTAMP),
+                new VoltTable.ColumnInfo("ts", VoltType.VARBINARY),
+                new VoltTable.ColumnInfo("ANUMBER", VoltType.BIGINT));
 
         table.addRow(1, startDate, t2.toBytes(), 42);
 
@@ -142,11 +143,8 @@ class TestExpand {
 
         System.out.println(table2.toFormattedString());
 
-        assertEquals(table2.getRowCount(),100);
-
+        assertEquals(table2.getRowCount(), 100);
 
     }
-
-
 
 }
