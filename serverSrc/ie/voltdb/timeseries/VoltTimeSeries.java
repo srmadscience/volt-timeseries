@@ -11,7 +11,8 @@ import org.voltdb.VoltProcedure.VoltAbortException;
 import org.voltdb.types.TimestampType;
 
 /**
- * A wrapper class for CompressedTimeSeries that throws VoltAbortExceptions with useful messages when needed.
+ * A wrapper class for CompressedTimeSeries that throws VoltAbortExceptions with
+ * useful messages when needed.
  */
 public class VoltTimeSeries {
 
@@ -223,7 +224,8 @@ public class VoltTimeSeries {
 
             theBytes = CompressedTimeSeries.put(theTimeSeries, theDate.asExactJavaDate(), theValue);
         } catch (Exception e) {
-            throw new VoltAbortException("Unable to deserialize theTimeSeries: " + e.getMessage());
+            throw new VoltAbortException("Unable to put theTimeSeries: " + e.getClass().getName() + ":" + e.getMessage()
+                    + ":" + theDate.asExactJavaDate().toString() + ":" + theValue);
         }
 
         return theBytes;

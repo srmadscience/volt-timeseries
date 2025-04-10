@@ -15,6 +15,7 @@ import java.util.Date;
 
 import org.voltdb.VoltTable;
 import org.voltdb.VoltType;
+import org.voltdb.VoltProcedure.VoltAbortException;
 
 public class TimeSeries {
 
@@ -140,6 +141,11 @@ public class TimeSeries {
                 } else {
                     return false;
                 }
+
+            } else if (eventTime.equals(maxTime)) {
+
+                // update previous value..
+                timeData.get(timeData.size() - 1).setValue(value);
 
             } else if (eventTime.before(minTime)) {
 
@@ -509,7 +515,13 @@ public class TimeSeries {
         }
 
         byte[] maxdateAsByteArray = new byte[Long.BYTES];
-        System.arraycopy(payload, payload.length - maxdateAsByteArray.length, maxdateAsByteArray, 0, Long.BYTES);
+        try {
+            System.arraycopy(payload, payload.length - maxdateAsByteArray.length, maxdateAsByteArray, 0, Long.BYTES);
+        } catch (Exception e) {
+            throw new VoltAbortException("getMaxDateFromByteArray: System.arraycopy failed with "
+                    + e.getClass().getName() + ":" + e.getMessage() + ":" + defaultDate.toGMTString() );
+
+        }
         Date maxTime = new Date(bytesToLong(maxdateAsByteArray));
         return maxTime;
     }

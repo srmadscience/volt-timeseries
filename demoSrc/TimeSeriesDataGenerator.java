@@ -40,7 +40,7 @@ public class TimeSeriesDataGenerator {
     Client voltClient = null;
 
     String hostnames;
-    String nessageType;
+    String messageType;
     int tpMs;
     int runSeconds;
     long maxValue;
@@ -48,11 +48,11 @@ public class TimeSeriesDataGenerator {
     boolean deleteOld = false;
     int timeChangeInterval;
 
-    public TimeSeriesDataGenerator(String hostnames, String nessageType, int tpMs, int runSeconds, long maxValue,
+    public TimeSeriesDataGenerator(String hostnames, String messageType, int tpMs, int runSeconds, long maxValue,
             int changeInterval, int deleteOldInt, int timeChangeInterval) {
         super();
         this.hostnames = hostnames;
-        this.nessageType = nessageType;
+        this.messageType = messageType;
         this.tpMs = tpMs;
         this.runSeconds = runSeconds;
         this.maxValue = maxValue;
@@ -92,6 +92,14 @@ public class TimeSeriesDataGenerator {
             }
         }
 
+        try {
+            voltClient.callProcedure("@Statistics", "PROCEDUREDETAIL", 1);
+            voltClient.callProcedure("@Statistics", "TABLE", 1);
+        } catch (IOException | ProcCallException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
         while (System.currentTimeMillis() < (startMs + (1000 * runSeconds)) && recordCount < 10000001) {
 
             recordCount++;
@@ -104,7 +112,7 @@ public class TimeSeriesDataGenerator {
             ComplainOnErrorCallback coec = new ComplainOnErrorCallback();
 
             try {
-                voltClient.callProcedure(coec, "ReportEvent", nessageType, new Date(startMs + recordCount), value);
+                voltClient.callProcedure(coec, "ReportEvent", messageType, new Date(startMs + recordCount), value);
             } catch (IOException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -125,16 +133,18 @@ public class TimeSeriesDataGenerator {
                 tpThisMs = 0;
             }
 
-            if (recordCount % 10000 == 0) {
+            if (recordCount % 1000000 == 0) {
                 msg("Record " + recordCount + "...");
             }
 
         }
 
         try {
-            ClientResponse cr = voltClient.callProcedure("GetEvents", nessageType, new Date(startMs),
+            ClientResponse cr = voltClient.callProcedure("GetEvents", messageType, new Date(startMs),
                     new Date(startMs + 1000));
-            msg(cr.getResults()[0].toFormattedString());
+            if (cr.getResults()[0] != null) {
+                msg(cr.getResults()[0].toFormattedString());
+            }
 
             ClientResponse cr2 = voltClient.callProcedure("@AdHoc",
                     "select message_type_id" + ", message_time,"
@@ -154,7 +164,31 @@ public class TimeSeriesDataGenerator {
 
             msg(cr2.getResults()[0].toFormattedString());
 
-            cr = voltClient.callProcedure("@Statistics", "TABLE", 0);
+            cr = voltClient.callProcedure("@Statistics", "PROCEDUREDETAIL", 1);
+
+            long addCompressedAvgTime = -1;
+            long updateCompressedAvgTime = -1;
+            long addUncompressedAvgTime = -1;
+
+            while (cr.getResults()[0].advanceRow()) {
+
+                String procName = cr.getResults()[0].getString("PROCEDURE");
+                String statement = cr.getResults()[0].getString("STATEMENT");
+
+                if (procName.equalsIgnoreCase("timeseries.ReportEvent")) {
+
+                    if (statement.equalsIgnoreCase("addCompressed")) {
+                        addCompressedAvgTime = cr.getResults()[0].getLong("AVG_EXECUTION_TIME");
+                    } else if (statement.equalsIgnoreCase("addUncompressed")) {
+                        addUncompressedAvgTime = cr.getResults()[0].getLong("AVG_EXECUTION_TIME");
+                    } else if (statement.equalsIgnoreCase("updateCompressed")) {
+                        updateCompressedAvgTime = cr.getResults()[0].getLong("AVG_EXECUTION_TIME");
+                    }
+
+                }
+            }
+
+            cr = voltClient.callProcedure("@Statistics", "TABLE", 1);
 
             long compressedSize = 0;
             long unCompressedSize = 0;
@@ -185,10 +219,12 @@ public class TimeSeriesDataGenerator {
                 msg("compression ratio = " + (unCompressedSize / compressedSize));
             }
 
-            msg("GREPME:" + hostnames + ":" + nessageType + ":" + tpMs + ":" + runSeconds + ":" + maxValue + ":"
+            msg("GREPME:" + hostnames + ":" + messageType + ":" + tpMs + ":" + runSeconds + ":" + maxValue + ":"
                     + changeInterval + ":" + deleteOld + ":" + unCompressedSize + ":" + unCompressedRows + ":"
                     + compressedSize + ":" + compressedRows + ":" + recordCount + ":" + timeOffsetBytes + ":"
-                    + timeMsMultiplier + ":" + dataStorageBytes + ":" + dataMultiplier +":" + ((System.currentTimeMillis() - startMs)/1000));
+                    + timeMsMultiplier + ":" + dataStorageBytes + ":" + dataMultiplier  + ":"
+                    + addCompressedAvgTime + ":" + updateCompressedAvgTime + ":" + addUncompressedAvgTime + ":"
+                    + ((System.currentTimeMillis() - startMs) / 1000));
         } catch (IOException | ProcCallException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -285,6 +321,7 @@ public class TimeSeriesDataGenerator {
         int changeInterval = Integer.parseInt(args[5]);
         int deleteOldInt = Integer.parseInt(args[6]);
         int timechangeinterval = Integer.parseInt(args[7]);
+        boolean useCompression = false;
 
         TimeSeriesDataGenerator g = new TimeSeriesDataGenerator(hostnames, nessageType, tpMs, runSeconds, maxValue,
                 changeInterval, deleteOldInt, timechangeinterval);

@@ -9,10 +9,10 @@
 package ie.voltdb.timeseries;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Date;
 
-import org.voltdb.VoltTable;
-import org.voltdb.VoltType;
+import org.voltdb.VoltProcedure.VoltAbortException;
 
 public class CompressedTimeSeries extends TimeSeries {
 
@@ -61,7 +61,7 @@ public class CompressedTimeSeries extends TimeSeries {
         long lastTime = minTime.getTime();
 
         for (int i = 0; i < recordCount; i++) {
-
+ 
             byte[] recordDate = new byte[offsetBytes];
             byte[] recordValue = new byte[payloadBytes];
 
@@ -237,11 +237,21 @@ public class CompressedTimeSeries extends TimeSeries {
      * @param value
      * @return new payload
      */
+    @SuppressWarnings("deprecation")
     public static byte[] put(byte[] payload, Date eventTime, long value) {
 
         if (payload == null || payload.length <= 5) {
-            CompressedTimeSeries cts = new CompressedTimeSeries();
-            cts.put(eventTime, value);
+            CompressedTimeSeries cts = null;
+
+            try {
+                cts = new CompressedTimeSeries();
+                cts.put(eventTime, value);
+
+            } catch (Exception e) {
+                throw new VoltAbortException("FB6: System.arraycopy failed with " + e.getClass().getName() + ":"
+                        + e.getMessage() + ":" + eventTime.toGMTString() + ":" + value+ ":" + Arrays.toString(payload));
+
+            }
             return cts.toBytes();
         }
 
@@ -275,8 +285,16 @@ public class CompressedTimeSeries extends TimeSeries {
 
                             // Bump maxTime
                             int lastDatePos = payload.length - (TRAILING_DATE_BYTES);
-                            System.arraycopy(longToBytes(maxTime.getTime()), 0, payload, lastDatePos,
-                                    TRAILING_DATE_BYTES);
+                            try {
+                                System.arraycopy(longToBytes(maxTime.getTime()), 0, payload, lastDatePos,
+                                        TRAILING_DATE_BYTES);
+                            } catch (Exception e) {
+                                throw new VoltAbortException(
+                                        "FB1: System.arraycopy failed with " + e.getClass().getName() + ":"
+                                                + e.getMessage() + ":" + eventTime.toGMTString() + ":" + value+ ":" + Arrays.toString(payload));
+
+                            }
+
                             // Fast behavior #1 - change maxtime at end of serialized array...
                             return payload;
 
@@ -287,7 +305,14 @@ public class CompressedTimeSeries extends TimeSeries {
                             byte[] newPayload = new byte[payload.length + offsetBytes + payloadBytes];
 
                             // copy old stuff. minus maxdate
-                            System.arraycopy(payload, 0, newPayload, 0, payload.length - Long.BYTES);
+                            try {
+                                System.arraycopy(payload, 0, newPayload, 0, payload.length - Long.BYTES);
+                            } catch (Exception e) {
+                                throw new VoltAbortException(
+                                        "FB2: System.arraycopy failed with " + e.getClass().getName() + ":"
+                                                + e.getMessage() + ":" + eventTime.toGMTString() + ":" + value);
+
+                            }
 
                             byte[] timeBytes = new byte[offsetBytes];
                             byte[] dataBytes = new byte[payloadBytes];
@@ -297,24 +322,41 @@ public class CompressedTimeSeries extends TimeSeries {
                             dataBytes = storeValueInByteArray(payloadBytes, valueToStore, dataBytes);
 
                             // Copy date differential
-                            System.arraycopy(timeBytes, 0, newPayload,
-                                    newPayload.length - (TRAILING_DATE_BYTES + timeBytes.length + dataBytes.length),
-                                    timeBytes.length);
 
-                            // Copy encoded value
-                            System.arraycopy(dataBytes, 0, newPayload,
-                                    newPayload.length - (TRAILING_DATE_BYTES + dataBytes.length), dataBytes.length);
+                            try {
+                                System.arraycopy(timeBytes, 0, newPayload,
+                                        newPayload.length - (TRAILING_DATE_BYTES + timeBytes.length + dataBytes.length),
+                                        timeBytes.length);
+                            } catch (Exception e) {
+                                throw new VoltAbortException(
+                                        "FB3: System.arraycopy failed with " + e.getClass().getName() + ":"
+                                                + e.getMessage() + ":" + eventTime.toGMTString() + ":" + value);
+
+                            }
+
+                            try {
+                                // Copy encoded value
+                                System.arraycopy(dataBytes, 0, newPayload,
+                                        newPayload.length - (TRAILING_DATE_BYTES + dataBytes.length), dataBytes.length);
+                            } catch (Exception e) {
+                                throw new VoltAbortException(
+                                        "FB4: System.arraycopy failed with " + e.getClass().getName() + ":"
+                                                + e.getMessage() + ":" + eventTime.toGMTString() + ":" + value);
+
+                            }
 
                             // Store max time
-                            try {
 
+                            try {
                                 System.arraycopy(longToBytes(eventTime.getTime()), 0, newPayload,
                                         newPayload.length - TRAILING_DATE_BYTES, TRAILING_DATE_BYTES);
-
                             } catch (Exception e) {
+                                throw new VoltAbortException(
+                                        "FB5: System.arraycopy failed with " + e.getClass().getName() + ":"
+                                                + e.getMessage() + ":" + eventTime.toGMTString() + ":" + value+ ":" + Arrays.toString(payload));
 
-                                e.printStackTrace();
                             }
+
                             // Fast behavior #2 - add entry to end of serialized array...
                             return newPayload;
                         }
@@ -325,9 +367,18 @@ public class CompressedTimeSeries extends TimeSeries {
         }
 
         // Default behavior - create java object, add entry, serialize...
-        CompressedTimeSeries cts = new CompressedTimeSeries(payload);
-        cts.put(eventTime, value);
-        return cts.toBytes();
+
+        CompressedTimeSeries cts = null;
+        try {
+            cts = new CompressedTimeSeries(payload);
+            cts.put(eventTime, value);
+            return cts.toBytes();
+        } catch (Exception e) {
+            throw new VoltAbortException("FB7: System.arraycopy failed with " + e.getClass().getName() + ":"
+                    + e.getMessage() + ":" + eventTime.toGMTString() + ":" + value + ":" + Arrays.toString(payload));
+
+        }
+
     }
 
     /**
@@ -337,10 +388,19 @@ public class CompressedTimeSeries extends TimeSeries {
      * @return
      */
     private static long getLastValue(byte[] payload, final byte payloadBytes, final long payloadDecimals) {
+
         // See if last value is same, in which case we just overwrite it...
         int lastValuePos = payload.length - (TRAILING_DATE_BYTES + payloadBytes);
         byte[] lastValueBytes = new byte[payloadBytes];
-        System.arraycopy(payload, lastValuePos, lastValueBytes, 0, payloadBytes);
+
+        try {
+            System.arraycopy(payload, lastValuePos, lastValueBytes, 0, payloadBytes);
+        } catch (Exception e) {
+            throw new VoltAbortException("getLastValue: System.arraycopy failed with " + e.getClass().getName() + ":"
+                    + e.getMessage() + ":" + payloadBytes + ":" + payloadDecimals+ ":" + Arrays.toString(payload));
+
+        }
+
         long lastValue = 0;
 
         if (payloadBytes == Long.BYTES) {
@@ -528,7 +588,6 @@ public class CompressedTimeSeries extends TimeSeries {
 
     }
 
-   
     public static byte getOffsetBytes(byte[] payload) {
         return payload[OFFSET_BYTECOUNT_LOCATION];
     }
